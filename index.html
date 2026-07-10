@@ -6,6 +6,46 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>ຮ້ານ 3 ອ້າຍນ້ອງ</title>
+<!-- ============================================================
+     PWA / App Icon tags — ວາງແທນ <link>,<meta> ເດີມທັງໝົດ
+     ໃສ່ຢູ່ໃນ <head> ຂອງ index.html (ຫຼັງ <title>...</title>)
+     ============================================================ -->
+
+<!-- Manifest -->
+<link rel="manifest" href="manifest.json">
+
+<!-- Theme color (ແຖບ status bar / browser UI) -->
+<meta name="theme-color" content="#B8860B">
+
+<!-- Standard favicon -->
+<link rel="icon" type="image/x-icon" href="icons/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16.png">
+
+<!-- iOS / Safari "Add to Home Screen" -->
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-title" content="3 ອ້າຍນ້ອງ">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- Android / Chrome -->
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- ============================================================
+     ວາງກ່ອນ </body> — ລົງທະບຽນ Service Worker
+     (ຈຳເປັນເພື່ອໃຫ້ Chrome/Android ຂຶ້ນ "Install app" ແທ້ໆ)
+     ============================================================ -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Noto+Sans+Lao:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -2755,46 +2795,6 @@ async function autoSyncAllSlips() {
       await syncSlip(o.id, true);
     }
   } catch(e) {}
-}
-  
-<!-- ============================================================
-     PWA / App Icon tags — ວາງແທນ <link>,<meta> ເດີມທັງໝົດ
-     ໃສ່ຢູ່ໃນ <head> ຂອງ index.html (ຫຼັງ <title>...</title>)
-     ============================================================ -->
-
-<!-- Manifest -->
-<link rel="manifest" href="manifest.json">
-
-<!-- Theme color (ແຖບ status bar / browser UI) -->
-<meta name="theme-color" content="#B8860B">
-
-<!-- Standard favicon -->
-<link rel="icon" type="image/x-icon" href="icons/favicon.ico">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16.png">
-
-<!-- iOS / Safari "Add to Home Screen" -->
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
-<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
-<meta name="apple-mobile-web-app-title" content="3 ອ້າຍນ້ອງ">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-<!-- Android / Chrome -->
-<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
-<meta name="mobile-web-app-capable" content="yes">
-
-<!-- ============================================================
-     ວາງກ່ອນ </body> — ລົງທະບຽນ Service Worker
-     (ຈຳເປັນເພື່ອໃຫ້ Chrome/Android ຂຶ້ນ "Install app" ແທ້ໆ)
-     ============================================================ -->
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  });
 }
 </script>
 </body>
