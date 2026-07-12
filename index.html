@@ -1002,6 +1002,19 @@ async function pollForNewOrders() {
       sendNotif('🛎️ Order ໃໝ່!', notifBody, o.id);
       toast('🛎️ Order ໃໝ່! ' + tbl + ' — ' + itemsList, 'success');
     });
+    
+    if (!window._knownClaimed) window._knownClaimed = new Set();
+    orders.forEach(o => {
+      const isClaimed = (o.slip_url||'').toString().startsWith('CLAIMED|');
+      if (isClaimed && !window._knownClaimed.has(o.id)) {
+        window._knownClaimed.add(o.id);
+        const parts = o.slip_url.split('|'); const amt = parseFloat(parts[1])||0;
+        const tbl = o.table_code ? '🪑 '+o.table_code : '📦 Delivery';
+        sendNotif('💰 ລູກຄ້າແຈ້ງໂອນເງິນ!', tbl+' '+o.customer_name+'\n💵 '+fp(amt), o.id);
+        toast('💰 '+tbl+' '+o.customer_name+' ແຈ້ງໂອນ '+fp(amt), 'success');
+        playStatusSound('confirmed');
+      }
+    });
 
     const pending = orders.filter(o => o.status === 'pending').length;
     updateOrderBadge(pending);
@@ -1312,13 +1325,21 @@ function renderTrkResult(o, tableOrders) {
   const cancelledHtml = o.status === 'cancelled' ? '<div style="color:#EF9A9A;font-size:var(--fxs);margin-top:8px">❌ Order ຖືກຍົກເລີກ</div>' : '';
   const pollingBadge = o.status !== 'completed' && o.status !== 'cancelled'
     ? '<div style="margin-top:8px;display:flex;align-items:center;gap:5px;font-size:.65rem;color:rgba(255,255,255,.4)"><span class="rt-dot" style="width:5px;height:5px"></span>ກຳລັງ sync ອັດຕະໂນມັດ</div>' : '';
+  const isClaimed = (o.slip_url||'').toString().startsWith('CLAIMED|');
+  const isPaidConfirmed = (o.slip_url||'').toString().startsWith('PAID|');
+  const needsPayBtn = (o.payment_method === 'transfer' || o.payment_method === 'qr')
+    && o.status !== 'cancelled' && o.status !== 'completed' && !isPaidConfirmed;
+  const payBtnHtml = !needsPayBtn ? '' :
+    isClaimed
+    ? '<div style="margin-top:10px;padding:8px 12px;background:rgba(184,134,11,.15);border:1px solid rgba(255,215,0,.3);border-radius:8px;font-size:var(--fxs);color:var(--gold-l);text-align:center">⏳ ແຈ້ງໂອນແລ້ວ — ລໍຖ້າຮ້ານກວດຢືນຢັນ</div>'
+    : '<button onclick="reportPaidByCustomer(\''+o.id+'\','+o.total+',this)" style="width:100%;margin-top:10px;padding:10px;border:none;border-radius:8px;background:linear-gradient(135deg,#1A7A4A,#4CAF50);color:#fff;font-family:var(--fb);font-size:var(--fsm);font-weight:700;cursor:pointer">✅ ຂ້ອຍໄດ້ໂອນເງິນແລ້ວ</button>';
   res.style.display = 'block';
   res.innerHTML =
     '<div style="color:rgba(255,255,255,.8);font-size:var(--fxs);margin-bottom:8px">'+
     '<b style="color:var(--gold-l)">#'+(o.id||'').slice(0,7).toUpperCase()+'</b> — '+o.customer_name+tableInfo+
     '<span style="float:right;color:rgba(255,255,255,.5)">'+fp(o.total)+'</span></div>'+
     '<div class="st-steps">'+stepsHtml+'</div>'+
-    otherOrds + cancelledHtml + pollingBadge;
+    otherOrds + cancelledHtml + pollingBadge + payBtnHtml;
 }
 
 let _trkLastStatus = null;
@@ -1348,6 +1369,19 @@ function startTrkPoll(orderId, originalCode) {
 
 function stopTrkPoll() {
   if (_trkPollTimer) { clearInterval(_trkPollTimer); _trkPollTimer = null; }
+}
+
+async function reportPaidByCustomer(orderId, amount, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ ກຳລັງແຈ້ງ...'; }
+  const r = await api('customerReportPaid', { order_id: orderId, amount });
+  if (r && r.success) {
+    toast('✅ ແຈ້ງແລ້ວ! ຮ້ານກຳລັງກວດການໂອນ', 'success');
+    const inp = document.getElementById('trk-inp');
+    if (inp && inp.value) trackOrder();
+  } else {
+    if (btn) { btn.disabled = false; btn.textContent = '✅ ຂ້ອຍໄດ້ໂອນເງິນແລ້ວ'; }
+    toast('❌ ' + (r ? r.error : 'Error'), 'err');
+  }
 }
 
 // ============================================================
@@ -2168,16 +2202,24 @@ async function rOrders(){
                  + '<span style="font-size:.65rem;font-weight:700;color:var(--green)">'+fp(amt)+'</span>'
                  + '<span style="font-size:.55rem;color:var(--gray)">'+staffName+'</span></div>';
               })()
-         : o.slip_url
-           ? '<div style="display:flex;flex-direction:column;gap:3px;align-items:center">'
-             + '<a href="'+o.slip_url+'" target="_blank"><img src="'+o.slip_url+'" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:2px solid var(--green)" onerror="this.style.display=\'none\'"></a>'
-             + '<button class="abt bg2" style="font-size:.6rem;padding:2px 6px" onclick="viewSlip(\''+o.id+'\',\''+o.slip_url+'\')">👁 Slip</button>'
-             + '</div>'
-           : '<div style="display:flex;flex-direction:column;gap:3px;align-items:center">'
-             + '<button class="abt bg2" style="font-size:.6rem;padding:3px 8px;white-space:nowrap" onclick="confirmPaid(\''+o.id+'\','+o.total+')">✅ ຢືນຢັນຈ່າຍ</button>'
-             + '<button class="abt bpr2" style="font-size:.6rem;padding:2px 6px;white-space:nowrap" onclick="syncSlip(\''+o.id+'\')">🔄 ຊອກ</button>'
-       + '</div>'
-    )+'</td>'+
+           : o.slip_url && o.slip_url.startsWith('CLAIMED|')
+             ? (function(){ const parts=o.slip_url.split('|'); const amt=parseFloat(parts[1])||0;
+                 return '<div style="display:flex;flex-direction:column;gap:3px;align-items:center">'
+                   + '<span class="bgs s-pen" style="white-space:nowrap;background:rgba(255,165,0,.2)">🔔 ລູກຄ້າແຈ້ງໂອນ</span>'
+                   + '<span style="font-size:.65rem;font-weight:700;color:var(--orange)">'+fp(amt)+'</span>'
+                   + '<button class="abt bg2" style="font-size:.6rem;padding:2px 6px" onclick="confirmPaid(\''+o.id+'\','+amt+')">✅ ຢືນຢັນ</button>'
+                   + '</div>';
+               })()
+             : o.slip_url
+               ? '<div style="display:flex;flex-direction:column;gap:3px;align-items:center">'
+                 + '<a href="'+o.slip_url+'" target="_blank"><img src="'+o.slip_url+'" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:2px solid var(--green)" onerror="this.style.display=\'none\'"></a>'
+                 + '<button class="abt bg2" style="font-size:.6rem;padding:2px 6px" onclick="viewSlip(\''+o.id+'\',\''+o.slip_url+'\')">👁 Slip</button>'
+                 + '</div>'
+               : '<div style="display:flex;flex-direction:column;gap:3px;align-items:center">'
+                 + '<button class="abt bg2" style="font-size:.6rem;padding:3px 8px;white-space:nowrap" onclick="confirmPaid(\''+o.id+'\','+o.total+')">✅ ຢືນຢັນຈ່າຍ</button>'
+                 + '<button class="abt bpr2" style="font-size:.6rem;padding:2px 6px;white-space:nowrap" onclick="syncSlip(\''+o.id+'\')">🔄 ຊອກ</button>'
+                 + '</div>'
+               )+'</td>'+
       '<td><div style="display:flex;gap:5px"><button class="abt be2" onclick="viewOrd(\''+o.id+'\')">👁</button><button class="abt bpr2" onclick="printInvoice(\''+o.id+'\')">🖨</button><button class="abt bd" onclick="delOrd(\''+o.id+'\')">🗑</button></div></td></tr>'
     ).join('')+'</tbody></table></div>';
   const nd=document.getElementById('on');
