@@ -2239,7 +2239,6 @@ async function delOrd(id){if(!confirm('ລຶບ?'))return;const r=await api('de
 async function viewOrd(id) {
   if (ORDER_CACHE[id]) {
     _renderOrderDetail(ORDER_CACHE[id].data);
-    '<td>' + i.menu_name + (i.item_note?'<br><span style="font-size:.7rem;color:var(--orange)">📝 '+i.item_note+'</span>':'') + '</td>'
     openModal('odm');
   } else {
     document.getElementById('odb').innerHTML =
