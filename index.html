@@ -949,16 +949,22 @@ async function initNotifications() {
   }
 }
 
-function sendNotif(title, body) {
+function sendNotif(title, body, orderId) {
   if ('Notification' in window && Notification.permission === 'granted') {
     const n = new Notification(title, {
       body,
       icon: '🍽️',
       badge: '🍽️',
-      tag: 'new-order',
+      tag: 'new-order-' + (orderId || Date.now()),
       requireInteraction: true
     });
-    n.onclick = () => { window.focus(); aTab('orders'); n.close(); };
+    n.onclick = () => {
+      window.focus();
+      if (!A.user) { openLoginModal(); n.close(); return; }
+      showPage('admin');
+      setTimeout(() => { if (orderId) viewOrd(orderId); }, 400);
+      n.close();
+    };
   }
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -988,9 +994,13 @@ async function pollForNewOrders() {
     const newOrders = orders.filter(o => !_lastKnownOrderIds.has(o.id));
     newOrders.forEach(o => {
       _lastKnownOrderIds.add(o.id);
-      const tbl = o.table_code ? '🪑 ໂຕະ ' + o.table_code : '📦 Delivery';
-      sendNotif('🛎️ Order ໃໝ່ເຂົ້າ!', tbl + ' — ' + o.customer_name + ' (' + fp(o.total) + ')');
-      toast('🛎️ Order ໃໝ່! ' + tbl + ' — ' + fp(o.total), 'success');
+      const tbl = o.table_code ? '🪑 ' + o.table_code : '📦 Delivery';
+      const itemsArr = (o.items||[]).map(i => i.menu_name + (i.item_note?'('+i.item_note+')':'') + ' x' + i.quantity);
+      let itemsList = itemsArr.join(', ');
+      if (itemsList.length > 80) itemsList = itemsArr.slice(0,2).join(', ') + ' +' + (itemsArr.length-2) + ' ລາຍການ';
+      const notifBody = tbl + ' ' + o.customer_name + '\n' + itemsList + '\n💰 ' + fp(o.total);
+      sendNotif('🛎️ Order ໃໝ່!', notifBody, o.id);
+      toast('🛎️ Order ໃໝ່! ' + tbl + ' — ' + itemsList, 'success');
     });
 
     const pending = orders.filter(o => o.status === 'pending').length;
@@ -1930,7 +1940,7 @@ function _renderPrintInvoice(o) {
   const dispDisc = (rawDisc > 0 && rawDisc < dispSub) ? rawDisc : 0;
   const dispTot = dispSub - dispDisc + (parseFloat(o.delivery_fee)||0) + (parseFloat(o.tax)||0);
   const tableInfo = o.table_code ? '<div style="margin-bottom:8px;font-size:.78rem;background:#f5f0e0;padding:6px 10px;border-radius:6px">🪑 ໂຕະ: <b style="color:#B8860B">' + o.table_code + '</b></div>' : '';
-  const rows = (o.items||[]).map(i => '<tr><td>' + i.menu_name + '</td><td style="text-align:center">' + i.quantity + '</td><td style="text-align:right">' + fp(i.unit_price) + '</td><td style="text-align:right;font-weight:700">' + fp(i.total_price) + '</td></tr>').join('');
+  const rows = (o.items||[]).map(i => '<tr><td>' + i.menu_name + (i.item_note?'<br><span style="font-size:.68rem;color:#C85A1A">📝 '+i.item_note+'</span>':'') + '</td><td style="text-align:center">' + i.quantity + '</td><td style="text-align:right">' + fp(i.unit_price) + '</td><td style="text-align:right;font-weight:700">' + fp(i.total_price) + '</td></tr>').join('');
   const dr = dispDisc > 0 ? '<tr><td colspan="3">ສ່ວນຫຼຸດ</td><td style="text-align:right;color:green">-' + fp(dispDisc) + '</td></tr>' : '';
   const dlr = parseFloat(o.delivery_fee) > 0 ? '<tr><td colspan="3">ຄ່າສົ່ງ</td><td style="text-align:right">' + fp(o.delivery_fee) + '</td></tr>' : '';
 
@@ -2108,7 +2118,7 @@ async function viewTableOrders(code){
         ['pending','confirmed','cooking','delivering','completed','cancelled'].map(s=>'<option value="'+s+'" '+(o.status===s?'selected':'')+'>'+s+'</option>').join('')+
         '</select><button class="abt be2" style="padding:3px 8px" onclick="printInvoice(\''+o.id+'\')">🖨</button></div></div>'+
         '<div style="font-size:var(--fsm)">'+o.customer_name+' | <b>'+fp(o.total)+'</b></div>'+
-        (o.items||[]).map(i=>'<div style="display:flex;justify-content:space-between;font-size:var(--fxs);padding:2px 0;color:var(--gray)"><span>'+i.menu_name+' x'+i.quantity+'</span><span>'+fp(i.total_price)+'</span></div>').join('')+
+        (o.items||[]).map(i=>'<div style="display:flex;justify-content:space-between;font-size:var(--fxs);padding:2px 0;color:var(--gray)"><span>'+i.menu_name+(i.item_note?' <span style="color:var(--orange)">📝 '+i.item_note+'</span>':'')+' x'+i.quantity+'</span><span>'+fp(i.total_price)+'</span></div>').join('')+
         '</div>';
     });
   } else { body+='<div class="es" style="padding:20px"><div class="ei">🪑</div><h3>ບໍ່ມີ Orders</h3></div>'; }
