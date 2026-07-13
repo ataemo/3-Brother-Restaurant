@@ -2271,8 +2271,8 @@ function _renderOrderDetail(o) {
     '<div style="grid-column:1/-1"><label class="fl">ສະຖານະ</label><span class="bgs ' + sclass(o.status) + '">' + o.status + '</span></div></div>' +
     '<div class="dtw" style="margin-bottom:var(--smd)"><table class="dt"><thead><tr><th>ລາຍການ</th><th>ຈຳ</th><th>ລາຄາ</th><th>ລວມ</th></tr></thead><tbody>' +
     (o.items||[]).map(i => '<tr><td>' + i.menu_name + 
-        (i.item_note?' <span style="color:var(--orange);font-weight:700;font-size:.85em">📝 '+i.item_note+'</span>':'') 
-        + '</td><td>' + i.quantity + '</td><td>' + fp(i.unit_price) + '</td><td>' + fp(i.total_price) + '</td></tr>').join('') +
+      (i.item_note?' <span style="color:var(--orange);font-weight:700;font-size:.85em">📝 '+i.item_note+'</span>':'') 
+      + '</td><td>' + i.quantity + '</td><td>' + fp(i.unit_price) + '</td><td>' + fp(i.total_price) + '</td></tr>').join('') +
     '</tbody></table></div>' +   ← ມີ + ຄົບແລ້ວ ✅
     '<div style="text-align:right">' +
     (dispDisc > 0 ? '<div class="sr"><span>ສ່ວນຫຼຸດ:</span><span style="color:var(--green)">-' + fp(dispDisc) + '</span></div>' : '') +
