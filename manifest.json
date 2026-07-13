@@ -6,8 +6,8 @@
   "scope": "/3-Brother-Restaurant/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#F8F5EF",
-  "theme_color": "#B8860B",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "lang": "lo",
   "dir": "ltr",
   "icons": [
