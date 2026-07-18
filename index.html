@@ -1005,10 +1005,10 @@ async function pollForNewOrders() {
     
     if (!window._knownClaimed) window._knownClaimed = new Set();
     orders.forEach(o => {
-      const isClaimed = (o.slip_url||'').toString().startsWith('CLAIMED|');
+      const isClaimed = (o.payment_status||'').toString().startsWith('CLAIMED|');
       if (isClaimed && !window._knownClaimed.has(o.id)) {
         window._knownClaimed.add(o.id);
-        const parts = o.slip_url.split('|'); const amt = parseFloat(parts[1])||0;
+        const parts = o.payment_status.split('|'); const amt = parseFloat(parts[1])||0;
         const tbl = o.table_code ? '🪑 '+o.table_code : '📦 Delivery';
         sendNotif('💰 ລູກຄ້າແຈ້ງໂອນເງິນ!', tbl+' '+o.customer_name+'\n💵 '+fp(amt), o.id);
         toast('💰 '+tbl+' '+o.customer_name+' ແຈ້ງໂອນ '+fp(amt), 'success');
@@ -1325,8 +1325,8 @@ function renderTrkResult(o, tableOrders) {
   const cancelledHtml = o.status === 'cancelled' ? '<div style="color:#EF9A9A;font-size:var(--fxs);margin-top:8px">❌ Order ຖືກຍົກເລີກ</div>' : '';
   const pollingBadge = o.status !== 'completed' && o.status !== 'cancelled'
     ? '<div style="margin-top:8px;display:flex;align-items:center;gap:5px;font-size:.65rem;color:rgba(255,255,255,.4)"><span class="rt-dot" style="width:5px;height:5px"></span>ກຳລັງ sync ອັດຕະໂນມັດ</div>' : '';
-  const isClaimed = (o.slip_url||'').toString().startsWith('CLAIMED|');
-  const isPaidConfirmed = (o.slip_url||'').toString().startsWith('PAID|');
+  const isClaimed = (o.payment_status||'').toString().startsWith('CLAIMED|');
+  const isPaidConfirmed = (o.payment_status||'').toString().startsWith('PAID|');
   const needsPayBtn = (o.payment_method === 'transfer' || o.payment_method === 'qr')
     && o.status !== 'cancelled' && o.status !== 'completed' && !isPaidConfirmed;
   const payBtnHtml = !needsPayBtn ? '' :
@@ -2098,7 +2098,7 @@ async function rTables(){
         '<button class="abt bd" style="font-size:var(--fxs);padding:4px 8px" onclick="delTableAdmin(\''+t.id+'\')">🗑</button></div></div>';
     }).join('')+'</div>'+
     '<div class="tb" style="margin-top:var(--slg)"><div class="tb-t">📋 Orders ທີ່ກຳລັງດຳເນີນ</div></div>'+
-    '<div class="dtw"><table class="dt"><thead><tr><th>Order</th><th>ໂຕະ</th><th>ລູກຄ້າ</th><th>ລາຄາ</th><th>ສະຖານະ</th><th>Slip</th><th>Actions</th></tr></thead><tbody>'+
+    '<div class="dtw"><table class="dt"><thead><tr><th>Order</th><th>ໂຕະ</th><th>ລູກຄ້າ</th><th>ລາຄາ</th><th>ສະຖານະ</th><th>ການຊຳລະ</th><th>Slip</th><th>Actions</th></tr></thead><tbody>'+
     orders.filter(o=>!['completed','cancelled'].includes(o.status) && o.table_code).map(o=>
       '<tr>'+
       '<td style="font-family:monospace">#'+(o.id||'').slice(0,7)+'</td>'+
@@ -2106,7 +2106,25 @@ async function rTables(){
       '<td><b>'+o.customer_name+'</b></td>'+
       '<td style="color:#b51100;font-weight:700">'+fp(o.total)+'</td>'+
       '<td><span class="bgs '+sclass(o.status)+'">'+o.status+'</span></td>'+
-      '<td onclick="event.stopPropagation()" style="min-width:70px;text-align:center">'+
+      '<td onclick="event.stopPropagation()" style="min-width:90px;text-align:center">'+
+         (o.payment_status && o.payment_status.startsWith('PAID|')
+           ? (function(){ const parts=o.payment_status.split('|'); const amt=parseFloat(parts[1])||0; const staffName=parts[2]||'';
+               return '<div style="display:flex;flex-direction:column;gap:2px;align-items:center">'
+                 + '<span class="bgs s-com" style="white-space:nowrap">✅ ຈ່າຍແລ້ວ</span>'
+                 + '<span style="font-size:.65rem;font-weight:700;color:var(--green)">'+fp(amt)+'</span>'
+                 + '<span style="font-size:.55rem;color:var(--gray)">'+staffName+'</span></div>';
+             })()
+           : o.payment_status && o.payment_status.startsWith('CLAIMED|')
+             ? (function(){ const parts=o.payment_status.split('|'); const amt=parseFloat(parts[1])||0;
+                 return '<div style="display:flex;flex-direction:column;gap:3px;align-items:center">'
+                   + '<span class="bgs s-pen" style="white-space:nowrap;background:rgba(255,165,0,.2)">🔔 ລູກຄ້າແຈ້ງໂອນ</span>'
+                   + '<span style="font-size:.65rem;font-weight:700;color:var(--orange)">'+fp(amt)+'</span>'
+                   + '<button class="abt bg2" style="font-size:.6rem;padding:2px 6px" onclick="confirmPaid(\''+o.id+'\','+amt+')">✅ ຢືນຢັນ</button>'
+                   + '</div>';
+               })()
+             : '<button class="abt bg2" style="font-size:.6rem;padding:3px 8px;white-space:nowrap" onclick="confirmPaid(\''+o.id+'\','+o.total+')">✅ ຢືນຢັນຈ່າຍ</button>'
+          )+'</td>'+
+         '<td onclick="event.stopPropagation()" style="min-width:70px;text-align:center">'+
          (o.slip_url
            ? '<div style="display:flex;flex-direction:column;gap:3px;align-items:center">'
              + '<a href="'+o.slip_url+'" target="_blank"><img src="'+o.slip_url+'" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:2px solid var(--green)" onerror="this.style.display=\'none\'"></a>'
@@ -2186,7 +2204,7 @@ async function rOrders(){
     '<select class="fi" style="width:auto;font-size:var(--fxs)" onchange="filtOrds(this.value,\'table\')">'+
     '<option value="">ທຸກໂຕະ</option><option value="__delivery__">🚚 Delivery</option>'+A.tables.map(t=>'<option value="'+t.code+'">🪑 '+t.code+'</option>').join('')+'</select>'+
     '<div style="display:flex;align-items:center;gap:5px;font-size:var(--fxs);color:var(--green)"><span class="rt-dot"></span>Auto</div></div></div>'+
-    '<div class="dtw"><table class="dt"><thead><tr><th>Order</th><th>ໂຕະ</th><th>ລູກຄ້າ</th><th>ລາຄາ</th><th>ສະຖານະ</th><th>ວັນທີ</th><th>Slip</th><th>Actions</th></tr></thead><tbody id="otb">'+
+    '<div class="dtw"><table class="dt"><thead><tr><th>Order</th><th>ໂຕະ</th><th>ລູກຄ້າ</th><th>ລາຄາ</th><th>ສະຖານະ</th><th>ວັນທີ</th><th>ການຊຳລະ</th><th>Slip</th><th>Actions</th></tr></thead><tbody id="otb">'+
     os.map(o=>'<tr data-status="'+o.status+'" data-table="'+(o.table_code||'')+'">'+
       '<td style="font-size:var(--fmd);font-family:monospace">#'+(o.id||'').slice(0,7)+'</td>'+
       '<td>'+(o.table_code?'<span style="background:rgba(200,90,26,.1);color:var(--orange);padding:5px 12px;border-radius:50px;font-weight:700;font-size:1rem">🪑 '+o.table_code+'</span>':'<span style="color:var(--gray-l);font-size:1.4rem">📦</span>')+'</td>'+
@@ -2194,32 +2212,32 @@ async function rOrders(){
       '<td style="color:#b51100;font-weight:700">'+fp(o.total)+'</td>'+
       '<td onclick="event.stopPropagation()"><select class="fi" style="width:auto;font-size:var(--fxs);padding:3px 6px" onchange="chgOrdSt(\''+o.id+'\',this.value)">'+['pending','confirmed','cooking','delivering','completed','cancelled'].map(s=>'<option value="'+s+'" '+(o.status===s?'selected':'')+'>'+s+'</option>').join('')+'</select></td>'+
       '<td style="font-size:var(--fmd)">'+fd(o.created_at)+'</td>'+
-      '<td style="min-width:70px;text-align:center">'+
-         (o.slip_url && o.slip_url.startsWith('PAID|')
-           ? (function(){ const parts=o.slip_url.split('|'); const amt=parseFloat(parts[1])||0; const staffName=parts[2]||''; 
+      '<td style="min-width:90px;text-align:center">'+
+         (o.payment_status && o.payment_status.startsWith('PAID|')
+           ? (function(){ const parts=o.payment_status.split('|'); const amt=parseFloat(parts[1])||0; const staffName=parts[2]||'';
                return '<div style="display:flex;flex-direction:column;gap:2px;align-items:center">'
                  + '<span class="bgs s-com" style="white-space:nowrap">✅ ຈ່າຍແລ້ວ</span>'
                  + '<span style="font-size:.65rem;font-weight:700;color:var(--green)">'+fp(amt)+'</span>'
                  + '<span style="font-size:.55rem;color:var(--gray)">'+staffName+'</span></div>';
-              })()
-           : o.slip_url && o.slip_url.startsWith('CLAIMED|')
-             ? (function(){ const parts=o.slip_url.split('|'); const amt=parseFloat(parts[1])||0;
+               })()
+           : o.payment_status && o.payment_status.startsWith('CLAIMED|')
+             ? (function(){ const parts=o.payment_status.split('|'); const amt=parseFloat(parts[1])||0;
                  return '<div style="display:flex;flex-direction:column;gap:3px;align-items:center">'
                    + '<span class="bgs s-pen" style="white-space:nowrap;background:rgba(255,165,0,.2)">🔔 ລູກຄ້າແຈ້ງໂອນ</span>'
                    + '<span style="font-size:.65rem;font-weight:700;color:var(--orange)">'+fp(amt)+'</span>'
                    + '<button class="abt bg2" style="font-size:.6rem;padding:2px 6px" onclick="confirmPaid(\''+o.id+'\','+amt+')">✅ ຢືນຢັນ</button>'
                    + '</div>';
                })()
-             : o.slip_url
-               ? '<div style="display:flex;flex-direction:column;gap:3px;align-items:center">'
-                 + '<a href="'+o.slip_url+'" target="_blank"><img src="'+o.slip_url+'" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:2px solid var(--green)" onerror="this.style.display=\'none\'"></a>'
-                 + '<button class="abt bg2" style="font-size:.6rem;padding:2px 6px" onclick="viewSlip(\''+o.id+'\',\''+o.slip_url+'\')">👁 Slip</button>'
-                 + '</div>'
-               : '<div style="display:flex;flex-direction:column;gap:3px;align-items:center">'
-                 + '<button class="abt bg2" style="font-size:.6rem;padding:3px 8px;white-space:nowrap" onclick="confirmPaid(\''+o.id+'\','+o.total+')">✅ ຢືນຢັນຈ່າຍ</button>'
-                 + '<button class="abt bpr2" style="font-size:.6rem;padding:2px 6px;white-space:nowrap" onclick="syncSlip(\''+o.id+'\')">🔄 ຊອກ</button>'
-                 + '</div>'
-               )+'</td>'+
+              : '<button class="abt bg2" style="font-size:.6rem;padding:3px 8px;white-space:nowrap" onclick="confirmPaid(\''+o.id+'\','+o.total+')">✅ ຢືນຢັນຈ່າຍ</button>'
+          )+'</td>'+
+      '<td style="min-width:70px;text-align:center">'+
+         (o.slip_url
+           ? '<div style="display:flex;flex-direction:column;gap:3px;align-items:center">'
+             + '<a href="'+o.slip_url+'" target="_blank"><img src="'+o.slip_url+'" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:2px solid var(--green)" onerror="this.style.display=\'none\'"></a>'
+             + '<button class="abt bg2" style="font-size:.6rem;padding:2px 6px" onclick="viewSlip(\''+o.id+'\',\''+o.slip_url+'\')">👁 Slip</button>'
+             + '</div>'
+           : '<button class="abt bpr2" style="font-size:.6rem;padding:3px 8px;white-space:nowrap" onclick="syncSlip(\''+o.id+'\')">🔄 ຊອກ</button>'
+          )+'</td>'+
       '<td><div style="display:flex;gap:5px"><button class="abt be2" onclick="viewOrd(\''+o.id+'\')">👁</button><button class="abt bpr2" onclick="printInvoice(\''+o.id+'\')">🖨</button><button class="abt bd" onclick="delOrd(\''+o.id+'\')">🗑</button></div></td></tr>'
     ).join('')+'</tbody></table></div>';
   const nd=document.getElementById('on');
