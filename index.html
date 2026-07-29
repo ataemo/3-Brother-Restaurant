@@ -607,6 +607,8 @@ nav a.ac,nav a:hover{background:var(--grad-gold)!important;color:#fff!important;
 
 /* ---- CART / MODALS: glass ---- */
 .csd,.mod{backdrop-filter:blur(18px) saturate(150%);background:var(--glass)!important;box-shadow:var(--shadow-lg)}
+.mod{background:#ffffff!important;backdrop-filter:none!important}
+body.dark-mode .mod{background:#1E1710!important;backdrop-filter:none!important}
 .chd,.mhd{background:transparent!important}
 
 /* ---- ADMIN SIDEBAR: glass + gradient active ---- */
@@ -904,7 +906,11 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
       </div>
       <p id="fmd2" style="color:var(--gray);line-height:1.7;margin-bottom:var(--smd);font-size:var(--fsm)"></p>
       <div id="fmtbn" style="margin-bottom:var(--smd);font-size:var(--fxs);color:var(--gray)"></div>
-      <div class="fg2">
+      <div class="fg2" id="fmaddons-wrap" style="display:none">
+        <label class="fl">✨ ຕົວເລືອກເພີ່ມເຕີມ</label>
+        <div class="pm2" id="fmaddons-list" style="grid-template-columns:1fr 1fr"></div>
+      </div>
+      <div style="margin-bottom:var(--smd)">
         <label class="fl">📝 ໝາຍເຫດ</label>
         <input class="fi" id="fmnote" placeholder="ເຊັ່ນ: ເຜັດໜ້ອຍ, ບໍ່ໃສ່ຜັກ, ຈືດ...">
       </div>
@@ -986,6 +992,11 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
       </div>
       <div class="fg2"><label class="fl">ລາຍລະອຽດ (ລາວ)</label><textarea class="fi" id="mfdl" placeholder="ລາຍລະອຽດ"></textarea></div>
       <div class="fg2"><label class="fl">📋 ໝາຍເຫດໂຕະ</label><input class="fi" id="mftbn" placeholder="ຕ້ອງສັ່ງລ່ວງໜ້າ..."></div>
+      <div class="fg2">
+        <label class="fl">✨ ຕົວເລືອກເພີ່ມເຕີມ (Add-ons)</label>
+        <div id="mf-addons-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px"></div>
+        <button type="button" onclick="addAddonRow()" style="padding:8px 16px;border-radius:50px;border:1.5px solid var(--border);background:var(--bg3);cursor:pointer;font-family:var(--fb);font-size:var(--fsm);font-weight:700;color:var(--gold-d)">➕ ເພີ່ມຕົວເລືອກ</button>
+      </div>
       <div class="fg2">
         <label class="fl">📐 ຫົວໜ່ວຍ</label>
         <select class="fi" id="mfunit">
@@ -1843,24 +1854,45 @@ function openFood(id) {
   if(item.special_price&&parseFloat(item.special_price)>0&&(item.is_promotion===true||item.is_promotion==='TRUE')){fo.textContent=fp(parseFloat(item.price));fo.style.display='block';}else fo.style.display='none';
   const tbnEl=document.getElementById('fmtbn');
   if(tbnEl) tbnEl.innerHTML=item.table_note?'<span style="background:rgba(200,90,26,.08);border:1px solid rgba(200,90,26,.2);border-radius:6px;padding:4px 10px;color:var(--orange)">📋 '+item.table_note+'</span>':'';
+  let addons=[]; try{addons=item.addons?JSON.parse(item.addons):[];}catch(e){}
+  A.curAddonsAvail=addons; A.curAddons=[];
+  const awrap=document.getElementById('fmaddons-wrap'), alist=document.getElementById('fmaddons-list');
+  if(addons.length){
+    awrap.style.display='block';
+    alist.innerHTML=addons.map((a,i)=>'<div class="po2" onclick="toggleAddon('+i+',this)"><span class="pic">➕</span>'+a.name+'<br><b>'+fp(a.price)+'</b></div>').join('');
+  }else awrap.style.display='none';
   setEl('mq','1'); setVal('fmnote',''); openModal('fdm');
 }
 function mqFn(d){A.mqv=Math.max(1,(A.mqv||1)+d);setEl('mq',A.mqv);}
 function addFromModal(){
   if(!A.curItem)return;
   const note=getVal('fmnote').trim();
-  addCart(A.curItem,A.mqv,note);
+  addCart(A.curItem,A.mqv,note,A.curAddons||[]);
   closeModal('fdm');toast('✅ ເພີ່ມເຂົ້າກະຕ່າ','success');
 }
+
+function toggleAddon(i, el){
+  el.classList.toggle('sel');
+  const addon=A.curAddonsAvail[i];
+  const idx=A.curAddons.findIndex(a=>a.name===addon.name);
+  if(el.classList.contains('sel')){ if(idx===-1) A.curAddons.push(addon); }
+  else { if(idx!==-1) A.curAddons.splice(idx,1); }
+  const base=gp(A.curItem);
+  const addTot=A.curAddons.reduce((s,a)=>s+(a.price||0),0);
+  setEl('fmp', fp(base+addTot)+(A.curItem.unit?' <span style="font-size:.9rem;color:var(--gray)">/'+A.curItem.unit+'</span>':''));
+}
+
 function qAdd(id){const item=A.menu.find(m=>m.id===id);if(item){addCart(item,1);toast('✅ ເພີ່ມ','success');}}
 
 // ============================================================
 // CART
 // ============================================================
-function addCart(item,qty=1,note=''){
-  const p=gp(item); const nm=item['name_'+A.lang]||item.name_lo;
-  const ex=A.cart.find(c=>c.id===item.id && (c.note||'')===note);
-  if(ex) ex.qty+=qty; else A.cart.push({id:item.id,nm,p,img:item.image_url,qty,note});
+function addCart(item,qty=1,note='',addons=[]){
+  const addPrice=(addons||[]).reduce((s,a)=>s+(a.price||0),0);
+  const p=gp(item)+addPrice; const nm=item['name_'+A.lang]||item.name_lo;
+  const key=JSON.stringify(addons||[]);
+  const ex=A.cart.find(c=>c.id===item.id && (c.note||'')===note && JSON.stringify(c.addons||[])===key);
+  if(ex) ex.qty+=qty; else A.cart.push({id:item.id,nm,p,img:item.image_url,qty,note,addons:addons||[]});
   saveCart(); updateCartUI();
 }
 function remCart(id){A.cart=A.cart.filter(c=>c.id!==id);saveCart();updateCartUI();}
@@ -1875,7 +1907,7 @@ function updateCartUI(){
 function renderCart(){
   const l=document.getElementById('cil'); if(!l) return;
   if(!A.cart.length){l.innerHTML='<div class="es"><div class="ei">🛒</div><h3>ກະຕ່າວ່າງ</h3></div>';return;}
-  l.innerHTML=A.cart.map(i=>'<div class="ci"><img class="cimg" src="'+(i.img||'')+'" onerror="this.style.display=\'none\'"><div class="cin"><div class="cin-n">'+i.nm+'</div>'+(i.note?'<div style="font-size:.68rem;color:var(--orange)">📝 '+i.note+'</div>':'')+'<div class="cin-p">'+fp(i.p*i.qty)+'</div></div><div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div class="qc"><button class="qb" onclick="updQty(\''+i.id+'\',-1)">−</button><span class="qn">'+i.qty+'</span><button class="qb" onclick="updQty(\''+i.id+'\',1)">+</button></div><button onclick="remCart(\''+i.id+'\')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:var(--fxs)">🗑 ລຶບ</button></div></div>').join('');
+  l.innerHTML=A.cart.map(i=>'<div class="ci"><img class="cimg" src="'+(i.img||'')+'" onerror="this.style.display=\'none\'"><div class="cin"><div class="cin-n">'+i.nm+'</div>'+(i.note?'<div style="font-size:.68rem;color:var(--orange)">📝 '+i.note+'</div>':'')+(i.addons&&i.addons.length?'<div style="font-size:.68rem;color:var(--gold-d)">✨ '+i.addons.map(a=>a.name).join(', ')+'</div>':'')+'<div class="cin-p">'+fp(i.p*i.qty)+'</div></div><div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div class="qc"><button class="qb" onclick="updQty(\''+i.id+'\',-1)">−</button><span class="qn">'+i.qty+'</span><button class="qb" onclick="updQty(\''+i.id+'\',1)">+</button></div><button onclick="remCart(\''+i.id+'\')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:var(--fxs)">🗑 ລຶບ</button></div></div>').join('');
 }
 function calcTotals(){
   const sub=A.cart.reduce((s,i)=>s+i.p*i.qty,0);
@@ -2570,6 +2602,8 @@ function openMenuForm(id){
     setVal('mfpr',item.price||''); setVal('mfsp',item.special_price||0); setVal('mfcp',item.cost_price||0);
     setVal('mfdl',item.description_lo||''); setVal('mfimg',item.image_url||''); setVal('mftbn',item.table_note||''); setVal('mfunit',item.unit||'');
     prevImg(item.image_url||'');
+    try{ _mfAddons = item.addons ? JSON.parse(item.addons) : []; }catch(e){ _mfAddons=[]; }   /* 👈 ວາງໃສ່ບ່ອນນີ້ */
+    renderAddonRows();                                                                          /* 👈 ວາງໃສ່ບ່ອນນີ້ */
     document.getElementById('mfav').checked=item.is_available!==false&&item.is_available!=='FALSE';
     document.getElementById('mfpm').checked=item.is_promotion===true||item.is_promotion==='TRUE';
     document.getElementById('mfpop').checked=item.is_popular===true||item.is_popular==='TRUE';
@@ -2579,9 +2613,28 @@ function openMenuForm(id){
     document.getElementById('mfav').checked=true;
     document.getElementById('mfpm').checked=false; document.getElementById('mfpop').checked=false;
     prevImg('');
+    _mfAddons = []; renderAddonRows();   /* 👈 ນີ້ແມ່ນຈຸດທີ 2 ໃນຄຳຕອບກ່ອນໜ້າ ໃສ່ບ່ອນນີ້ຄຽງກັນ */
   }
   calcProfit(); openModal('mfm');
 }
+
+let _mfAddons = [];
+function addAddonRow(name='', price=0) {
+  _mfAddons.push({name, price});
+  renderAddonRows();
+}
+function renderAddonRows() {
+  const c = document.getElementById('mf-addons-list');
+  if (!c) return;
+  c.innerHTML = _mfAddons.map((a,i)=>
+    '<div style="display:flex;gap:8px;align-items:center">'+
+    '<input class="fi" placeholder="ຊື່ຕົວເລືອກ ເຊັ່ນ ໄຂ່ດາວ" value="'+(a.name||'')+'" oninput="_mfAddons['+i+'].name=this.value" style="flex:2">'+
+    '<input type="number" class="fi" placeholder="ລາຄາ" value="'+(a.price||0)+'" oninput="_mfAddons['+i+'].price=parseFloat(this.value)||0" style="flex:1">'+
+    '<button type="button" class="abt bd" onclick="_mfAddons.splice('+i+',1);renderAddonRows()">🗑</button>'+
+    '</div>'
+  ).join('');
+}
+
 async function saveMenu(){
   const id=document.getElementById('mfid').value;
   const data={id,name_lo:getVal('mflo'),name_th:getVal('mfth'),name_en:getVal('mfen'),category_id:getVal('mfcat'),
@@ -2590,6 +2643,11 @@ async function saveMenu(){
     is_available:document.getElementById('mfav').checked,is_promotion:document.getElementById('mfpm').checked,is_popular:document.getElementById('mfpop').checked};
   if(!data.name_lo||!data.price){toast('ໃສ່ຊື່ ແລະ ລາຄາ','err');return;}
   const r=await api(id?'updateMenuItem':'addMenuItem',data);
+  const data={id,name_lo:getVal('mflo'),name_th:getVal('mfth'),name_en:getVal('mfen'),category_id:getVal('mfcat'),
+    price:parseFloat(getVal('mfpr'))||0,special_price:parseFloat(getVal('mfsp'))||0,cost_price:parseFloat(getVal('mfcp'))||0,
+    description_lo:getVal('mfdl'),image_url:getVal('mfimg'),table_note:getVal('mftbn'),unit:getVal('mfunit'),
+    addons: JSON.stringify(_mfAddons.filter(a=>a.name && a.name.trim())),   // ← ໃສ່ແຖວນີ້
+    is_available:document.getElementById('mfav').checked,is_promotion:document.getElementById('mfpm').checked,is_popular:document.getElementById('mfpop').checked};
   if(r&&r.success){toast('✅ ບັນທຶກ','success');closeModal('mfm');rMenu();}
   else toast('❌ '+(r?r.error:'Error'),'err');
 }
