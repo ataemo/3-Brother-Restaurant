@@ -51,7 +51,7 @@ if ('serviceWorker' in navigator) {
 <style>
 :root{
   /* ຄຳ (Gold) — ຫຼັກ */
-  --gold:#C9971F;--gold-l:#FFD866;--gold-d:#8B6508;
+  --gold:#C9971F;--gold-l:#FFD866;--gold-d:#8B6508;--price:#b51100;--price-old:#262626;
   /* ແດງລາຍລັກ (Lacquer red) — ຮອງ / accent */
   --lacq:#B5202B;--lacq-l:#E4483F;--lacq-d:#7A0F17;
   /* ຫຍົກ (Jade) — accent ທີສາມ */
@@ -603,7 +603,8 @@ nav a.ac,nav a:hover{background:var(--grad-gold)!important;color:#fff!important;
 .fc:hover{box-shadow:var(--shadow-lg),var(--glow)!important;border-color:var(--gold)!important}
 .bp2{background:var(--grad-lacq)!important}
 .bpp{background:var(--grad-gold)!important;color:var(--dark)!important}
-.pr,.ps{background:var(--grad-lacq);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pr,.ps{background:none!important;-webkit-text-fill-color:initial;color:var(--price)!important}
+.po{color:var(--price-old)!important}
 
 /* ---- CART / MODALS: glass ---- */
 .csd,.mod{backdrop-filter:blur(18px) saturate(150%);background:var(--glass)!important;box-shadow:var(--shadow-lg)}
@@ -658,6 +659,7 @@ body.radius-sharp{--r:6px;--rs:5px;--rl:8px}
 body.radius-round{--r:22px;--rs:16px;--rl:32px}
 
 @media(prefers-reduced-motion:reduce){.li::after,.hero::before,.hero::after,.bp::after,.bco::after{animation:none!important;display:none!important}}
+#ms{background:rgba(255,255,255,.95)}
 </style>
 </head>
 <body>
@@ -1580,6 +1582,7 @@ function applySettings() {
     document.documentElement.style.setProperty('--jade-l', lightHex(s.theme_color3, 25));
     document.documentElement.style.setProperty('--inc', s.theme_color3);
   }
+  if (s.theme_price_color) document.documentElement.style.setProperty('--price', s.theme_price_color);
 
   // ---- ຟອນ ----
   document.body.classList.remove('font-poppins','font-kanit','font-prompt','font-playfair');
@@ -2848,7 +2851,7 @@ async function saveSettings(){
     bank_account_name:getVal('sacn'),bank_qr_url:getVal('sqr'),
     theme_color:getVal('stcolh')||getVal('stcol'),
     theme_color2:getVal('stcol2h')||getVal('stcol2'),
-    theme_color3:getVal('stcol3h')||getVal('stcol3'),
+    theme_price_color:getVal('stpriceh')||getVal('stprice'),
     theme_font:getVal('stfont')||'playfair',
     theme_radius:getVal('stradius')||'default',
     dark_mode:getVal('stdark')||'FALSE'};
@@ -2886,7 +2889,7 @@ function themeCustomizerHtml(){
     '<h3 style="font-family:var(--fd);margin-bottom:4px;color:var(--dark)">🎨 ທີມ & ໄອຄອນ (ປັບແຕ່ງໜ້າຕາທັງລະບົບ)</h3>'+
     '<p style="font-size:var(--fxs);color:var(--gray);margin-bottom:var(--smd)">ປ່ຽນສີ, ຟອນ, ຄວາມໂຄ້ງ, ໂໝດມືດ ແລະ ໄອຄອນທຸກໜ້າ — ບັນທຶກແລ້ວຈະນຳໃຊ້ທັນທີທົ່ວແອັບ</p>'+
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--smd);margin-bottom:var(--smd)">'+
-    colorRow('stcol','🟡 ສີຫຼັກ (ຄຳ)',c1)+colorRow('stcol2','🔴 ສີຮອງ (ແດງລາຍລັກ)',c2)+colorRow('stcol3','🟢 ສີທີສາມ (ຫຍົກ)',c3)+
+    colorRow('stcol','🟡 ສີຫຼັກ (ຄຳ)',c1)+colorRow('stcol2','🔴 ສີຮອງ (ແດງລາຍລັກ)',c2)+colorRow('stcol3','🟢 ສີທີສາມ (ຫຍົກ)',c3)+colorRow('stprice','💰 ສີລາຄາ',s.theme_price_color||'#b51100')+
     '</div>'+
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--smd);margin-bottom:var(--smd)">'+
     '<div class="fg2"><label class="fl">✍️ ຟອນຫົວຂໍ້</label><select class="fi" id="stfont">'+
