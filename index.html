@@ -15,7 +15,7 @@
 <link rel="manifest" href="manifest.json">
 
 <!-- Theme color (ແຖບ status bar / browser UI) -->
-<meta name="theme-color" content="#B8860B">
+<meta name="theme-color" content="#ffffff">
 
 <!-- Standard favicon -->
 <link rel="icon" type="image/x-icon" href="icons/favicon.ico">
@@ -46,7 +46,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Noto+Sans+Lao:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Noto+Sans+Lao:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&family=Kanit:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --gold:#B8860B;--gold-l:#FFD700;--gold-d:#8B6508;
@@ -1254,6 +1254,7 @@ window.addEventListener('DOMContentLoaded', function() {
     if (e.target === document.getElementById('pm')) closePM();
   });
   if (A.selTable) populateCartTableSel(A.selTable);
+  loadCustomTheme();
 });
 
 // ============================================================
@@ -1430,7 +1431,7 @@ function applySettings() {
     document.documentElement.style.setProperty('--gold-d', darkHex(s.theme_color, 20));
   }
   const liw = document.getElementById('liw');
-  if (liw) { const lu=cdurl(s.logo_url||''); liw.innerHTML=lu?'<img src="'+lu+'" onerror="this.parentNode.innerHTML=\'🍽️\'">':'🍽️'; }
+  if (liw) { const lu=cdurl(s.logo_url||''); liw.innerHTML=lu?'<img src="'+lu+'" onerror="this.parentNode.innerHTML=\'🍽️\'">':(getIcon('logo')); }
   const bkd = document.getElementById('bkd');
   if (bkd) bkd.innerHTML='🏦 <b>'+(s.bank_name||'')+'</b><br>📋 <b>'+(s.bank_account||'')+'</b><br>👤 <b>'+(s.bank_account_name||'')+'</b>';
   const qrw=document.getElementById('qrw'); const qri=document.getElementById('qri');
@@ -2615,7 +2616,9 @@ async function rSettings(){
     '<div class="fg2"><label class="fl">ສີຫຼັກ</label><div style="display:flex;gap:8px;align-items:center"><input type="color" id="stcol" value="'+(s.theme_color||'#B8860B')+'" style="width:48px;height:34px;border:none;border-radius:6px;cursor:pointer" oninput="document.getElementById(\'stcolh\').value=this.value"><input class="fi" id="stcolh" value="'+(s.theme_color||'#B8860B')+'" style="flex:1" oninput="document.getElementById(\'stcol\').value=this.value"></div></div>'+
     '<div style="margin-top:var(--smd);background:rgba(192,57,43,.04);border:1.5px solid rgba(192,57,43,.15);border-radius:var(--rs);padding:var(--smd)"><h4 style="color:var(--red);margin-bottom:7px">🔧 Setup & Repair</h4><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="abt bd" style="padding:8px 16px" onclick="runSetup()">⚡ Run Setup</button><button class="abt bd" style="padding:8px 16px" onclick="runRepair()">🔧 Repair Orders</button></div></div>'+
     '</div></div>'+
+    themeCustomizerHtml()+
     '<div style="margin-top:var(--smd);text-align:right"><button class="bp" onclick="saveSettings()">💾 ບັນທຶກ</button></div>';
+  renderThemeCustomizerValues();
 }
 function prevQR(url){const w=document.getElementById('sqrw'),i=document.getElementById('sqri');if(!w||!i)return;if(url){i.src=cdurl(url);i.style.display='';w.style.display='block';}else w.style.display='none';}
 function prevLogo(url){const i=document.getElementById('slogp');if(!i)return;if(url){i.src=cdurl(url);i.style.display='block';}else i.style.display='none';}
