@@ -307,6 +307,19 @@ select.fi{cursor:pointer}textarea.fi{resize:vertical;min-height:72px}
 .po2.sel-inc{border-color:var(--inc)!important;background:var(--inc-bg)!important;color:var(--inc)!important;font-weight:700!important}
 .po2.sel-exp{border-color:var(--exp)!important;background:var(--exp-bg)!important;color:var(--exp)!important;font-weight:700!important}
 
+/* ✨ ADDON PILLS — ແບບແປ ບໍ່ສູງ ຄືຮູບຕົວຢ່າງ */
+.addon-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.addon-pill{
+  display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
+  gap:5px;padding:9px 12px;border:1.5px solid var(--orange);
+  border-radius:50px;text-align:center;cursor:pointer;
+  transition:all .2s;font-size:var(--fsm);color:var(--dark);
+  background:var(--bg2);touch-action:manipulation
+}
+.addon-pill .ap-price{color:var(--orange);font-weight:700}
+.addon-pill.sel{border-color:var(--gold);background:rgba(184,134,11,.08)}
+.addon-pill.sel .ap-price{color:var(--gold-d)}
+
 /* DATE FILTER */
 .dtf-wrap{position:relative;display:inline-block}
 .dtf-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--bg2);border:1.5px solid var(--border);border-radius:50px;font-family:var(--fb);font-size:var(--fsm);font-weight:700;color:var(--gold-d);cursor:pointer;transition:all .2s;white-space:nowrap}
@@ -908,7 +921,7 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
       <div id="fmtbn" style="margin-bottom:var(--smd);font-size:var(--fxs);color:var(--gray)"></div>
       <div class="fg2" id="fmaddons-wrap" style="display:none">
         <label class="fl">✨ ຕົວເລືອກເພີ່ມເຕີມ</label>
-        <div class="pm2" id="fmaddons-list" style="grid-template-columns:1fr 1fr"></div>
+        <div class="addon-grid" id="fmaddons-list"></div>
       </div>
       <div style="margin-bottom:var(--smd)">
         <label class="fl">📝 ໝາຍເຫດ</label>
@@ -1859,7 +1872,7 @@ function openFood(id) {
   const awrap=document.getElementById('fmaddons-wrap'), alist=document.getElementById('fmaddons-list');
   if(addons.length){
     awrap.style.display='block';
-    alist.innerHTML=addons.map((a,i)=>'<div class="po2" onclick="toggleAddon('+i+',this)"><span class="pic">➕</span>'+a.name+'<br><b>'+fp(a.price)+'</b></div>').join('');
+    alist.innerHTML=addons.map((a,i)=>'<div class="addon-pill" onclick="toggleAddon('+i+',this)"><span>'+a.name+'</span><span class="ap-price">'+fp(a.price)+'</span></div>').join('');
   }else awrap.style.display='none';
   setEl('mq','1'); setVal('fmnote',''); openModal('fdm');
 }
