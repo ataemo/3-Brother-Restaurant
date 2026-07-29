@@ -46,19 +46,33 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Noto+Sans+Lao:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&family=Kanit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=Noto+Sans+Lao:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700&family=Prompt:wght@400;500;600;700&family=Kanit:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --gold:#B8860B;--gold-l:#FFD700;--gold-d:#8B6508;
-  --bg:#F8F5EF;--bg2:#fff;--bg3:#F0EBE1;
-  --dark:#1A1205;--dark2:#2D2010;--gray:#7A6A50;--gray-l:#BFB49A;
+  /* ຄຳ (Gold) — ຫຼັກ */
+  --gold:#C9971F;--gold-l:#FFD866;--gold-d:#8B6508;
+  /* ແດງລາຍລັກ (Lacquer red) — ຮອງ / accent */
+  --lacq:#B5202B;--lacq-l:#E4483F;--lacq-d:#7A0F17;
+  /* ຫຍົກ (Jade) — accent ທີສາມ */
+  --jade:#0F7A5C;--jade-l:#2ECC9A;--jade-d:#0A4F3B;
+  /* neutrals */
+  --bg:#F7F3EA;--bg2:#fff;--bg3:#F1E9DA;
+  --dark:#1C1408;--dark2:#241A2E;--gray:#7A6A58;--gray-l:#C7BBA3;
   --red:#C0392B;--green:#1A7A4A;--orange:#C85A1A;--blue:#1565C0;
-  --inc:#1A7A4A;--inc-bg:rgba(26,122,74,.08);--inc-br:rgba(26,122,74,.25);
-  --exp:#C0392B;--exp-bg:rgba(192,57,43,.08);--exp-br:rgba(192,57,43,.25);
-  --border:rgba(184,134,11,.18);--shadow:0 2px 16px rgba(0,0,0,.08);
-  --r:14px;--rs:9px;
+  --inc:#0F7A5C;--inc-bg:rgba(15,122,92,.09);--inc-br:rgba(15,122,92,.25);
+  --exp:#B5202B;--exp-bg:rgba(181,32,43,.08);--exp-br:rgba(181,32,43,.22);
+  --border:rgba(201,151,31,.20);--shadow:0 4px 24px rgba(28,20,8,.09);
+  --shadow-lg:0 18px 48px rgba(28,20,8,.16);
+  --glow:0 0 0 1px rgba(201,151,31,.35),0 8px 30px rgba(201,151,31,.20);
+  --glass:rgba(255,255,255,.72);
+  --r:18px;--rs:12px;--rl:26px;
   --fd:'Playfair Display','Noto Sans Lao',serif;
-  --fb:'Noto Sans Lao','Montserrat',sans-serif;
+  --fb:'Noto Sans Lao','Poppins',sans-serif;
+  --fu:'Poppins','Noto Sans Lao',sans-serif;
+  --grad-gold:linear-gradient(135deg,var(--gold-d),var(--gold) 45%,var(--gold-l));
+  --grad-lacq:linear-gradient(135deg,var(--lacq-d),var(--lacq) 50%,var(--lacq-l));
+  --grad-hero:linear-gradient(120deg,rgba(28,20,8,.90) 0%,rgba(122,15,23,.55) 45%,rgba(201,151,31,.20) 100%);
+  --grad-dark:linear-gradient(160deg,#1C1408 0%,#241A2E 60%,#2D1B12 100%);
   --st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);
   --fxs:clamp(.68rem,2.5vw,.76rem);--fsm:clamp(.78rem,3vw,.86rem);
   --fb2:clamp(.85rem,3.5vw,.95rem);--fmd:clamp(.95rem,4vw,1.05rem);
@@ -67,6 +81,13 @@ if ('serviceWorker' in navigator) {
   --sxs:clamp(4px,1vw,8px);--ssm:clamp(8px,2vw,12px);
   --smd:clamp(12px,3vw,18px);--slg:clamp(16px,4vw,24px);
   --hh:clamp(56px,12vw,68px)
+}
+/* ໂໝດມືດ — ເປີດ/ປິດຈາກ ຕັ້ງຄ່າ > ທີມ & ໄອຄອນ */
+body.dark-mode{
+  --bg:#14100A;--bg2:#1E1710;--bg3:rgba(40,32,22,.55);
+  --dark:#F5EFE2;--dark2:#F5EFE2;--gray:#C9BCA4;--gray-l:#8B7C63;
+  --border:rgba(201,151,31,.28);--glass:rgba(30,23,16,.72);
+  --shadow:0 4px 24px rgba(0,0,0,.35);--shadow-lg:0 18px 48px rgba(0,0,0,.5);
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
@@ -522,6 +543,113 @@ footer{background:var(--dark2);border-top:1.5px solid rgba(184,134,11,.15);paddi
   }
 }
 
+/* ============================================================
+   ✨ MODERN UI UPGRADE — ໂທນ "ລາຍລັກລາວ" ຄຳ+ແດງ+ຫຍົກ, ຫຼູຫຼາ ທັນສະໄໝ
+   (ຊັ້ນນີ້ຂຽນທັບຂ້າງເທິງ ໂດຍບໍ່ໄປແກ້ໂຄງສ້າງ HTML/JS ເດີມ)
+   ============================================================ */
+body{background-image:radial-gradient(circle at 8% 0%,rgba(201,151,31,.10),transparent 40%),radial-gradient(circle at 96% 12%,rgba(181,32,43,.08),transparent 38%),radial-gradient(circle at 50% 100%,rgba(15,122,92,.06),transparent 45%);background-attachment:fixed}
+*{scrollbar-color:var(--gold) transparent}
+::-webkit-scrollbar-thumb{background:var(--grad-gold);border-radius:4px}
+
+/* ---- HEADER glass ---- */
+header{background:var(--glass)!important;backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);border-bottom:1px solid var(--border);box-shadow:0 4px 28px rgba(28,20,8,.06)}
+header::before{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--grad-gold);opacity:.9}
+.li{background:var(--grad-gold)!important;box-shadow:var(--glow);position:relative;overflow:hidden}
+.li::after{content:'';position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%);transform:translateX(-120%);animation:shine 5s ease-in-out infinite}
+@keyframes shine{0%,60%{transform:translateX(-120%)}80%,100%{transform:translateX(120%)}}
+.lt{background:var(--grad-lacq);-webkit-background-clip:text;background-clip:text;color:transparent!important;font-weight:800}
+nav a.ac,nav a:hover{background:var(--grad-gold)!important;color:#fff!important;box-shadow:var(--glow)}
+.blg{background:var(--grad-lacq)!important;box-shadow:0 6px 20px rgba(181,32,43,.30)}
+
+/* ---- BUTTONS: gradient + shine sweep ---- */
+.bp,.bco,.bpr,.bp2gold{background:var(--grad-gold)!important;box-shadow:0 8px 26px rgba(201,151,31,.35)!important;position:relative;overflow:hidden;border:none}
+.bp::after,.bco::after{content:'';position:absolute;inset:0;background:linear-gradient(115deg,transparent 25%,rgba(255,255,255,.5) 50%,transparent 75%);transform:translateX(-130%);transition:transform .6s ease}
+.bp:hover::after,.bco:hover::after{transform:translateX(130%)}
+.bp:hover,.bco:hover{transform:translateY(-3px) scale(1.015);box-shadow:0 12px 32px rgba(201,151,31,.42)!important}
+.bo{background:var(--glass)!important;backdrop-filter:blur(8px);border:1.5px solid var(--border)!important}
+.ab{background:var(--grad-lacq)!important;box-shadow:0 4px 16px rgba(181,32,43,.30)}
+.trk-btn2{background:var(--grad-gold)!important}
+.bcp2{background:linear-gradient(135deg,rgba(201,151,31,.14),rgba(201,151,31,.05))!important}
+
+/* ---- HERO: layered gradient + floating glow orbs (signature element) ---- */
+.ho{background:var(--grad-hero)!important}
+.hero{position:relative}
+.hero::before,.hero::after{content:'';position:absolute;border-radius:50%;filter:blur(60px);opacity:.35;pointer-events:none;z-index:1}
+.hero::before{width:260px;height:260px;background:var(--gold-l);top:-60px;right:8%;animation:floaty 9s ease-in-out infinite}
+.hero::after{width:200px;height:200px;background:var(--lacq-l);bottom:-40px;left:6%;animation:floaty 11s ease-in-out infinite reverse}
+@keyframes floaty{0%,100%{transform:translateY(0) translateX(0)}50%{transform:translateY(-26px) translateX(14px)}}
+.htg{background:var(--grad-lacq)!important;color:#fff!important;border:none!important;box-shadow:0 6px 18px rgba(181,32,43,.28)}
+.ht .gd{background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+.stn{background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hdot.ac{background:var(--grad-gold)!important}
+
+/* ---- PROMO BANNER richer gradient ---- */
+.pb{background:var(--grad-lacq)!important}
+
+/* ---- CATEGORY CHIPS ---- */
+.cc{border-radius:50px;transition:all .25s cubic-bezier(.25,.8,.25,1)}
+.cc:hover,.cc.ac{background:var(--grad-gold)!important;border-color:transparent!important;box-shadow:var(--glow);transform:translateY(-2px)}
+
+/* ---- FOOD CARDS: glass hover glow ---- */
+.fc{border-radius:var(--r);transition:all .35s cubic-bezier(.25,.8,.25,1)}
+.fc:hover{box-shadow:var(--shadow-lg),var(--glow)!important;border-color:var(--gold)!important}
+.bp2{background:var(--grad-lacq)!important}
+.bpp{background:var(--grad-gold)!important;color:var(--dark)!important}
+.pr,.ps{background:var(--grad-lacq);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* ---- CART / MODALS: glass ---- */
+.csd,.mod{backdrop-filter:blur(18px) saturate(150%);background:var(--glass)!important;box-shadow:var(--shadow-lg)}
+.chd,.mhd{background:transparent!important}
+
+/* ---- ADMIN SIDEBAR: glass + gradient active ---- */
+.asi{background:var(--glass)!important;backdrop-filter:blur(20px) saturate(160%);border-right:1px solid var(--border)}
+.ani.ac{background:var(--grad-gold)!important;color:#fff!important;border-left-color:transparent!important;box-shadow:var(--glow)}
+.ani:hover{background:rgba(201,151,31,.10)!important}
+.amn{background:var(--glass)!important;backdrop-filter:blur(20px)}
+.amni.ac{background:var(--grad-gold)!important;border-radius:var(--rs)}
+.amni.ac .nl{color:#fff!important}
+
+/* ---- STAT / KPI CARDS: soft gradient corner accent ---- */
+.sc,.fkpi{border-radius:var(--r);position:relative;overflow:hidden;transition:all .3s ease}
+.sc::before,.fkpi::before{content:'';position:absolute;top:-30%;right:-20%;width:70px;height:70px;border-radius:50%;background:var(--grad-gold);opacity:.10}
+.sc:hover,.fkpi:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.sc.inc-c::before,.fkpi.ik::before{background:var(--jade)}
+.sc.exp-c::before,.fkpi.ek::before{background:var(--lacq)}
+
+/* ---- CHARTS bars gradient ---- */
+.bar{background:var(--grad-gold)!important;border-radius:5px 5px 0 0}
+.bar.pbar{background:linear-gradient(180deg,var(--jade-l),var(--jade))!important}
+.bar.ibar{background:linear-gradient(180deg,var(--jade-l),var(--jade))!important}
+.bar.ebar{background:linear-gradient(180deg,var(--lacq-l),var(--lacq))!important}
+
+/* ---- BADGES / status pills ---- */
+.bgs,.bdg{border-radius:50px;font-weight:800;letter-spacing:.03em}
+.s-com{background:var(--jade)!important;color:#fff!important;border:none!important}
+.s-pen{background:var(--gold)!important;color:#fff!important;border:none!important}
+.s-can{background:var(--lacq)!important;color:#fff!important;border:none!important}
+
+/* ---- TOAST modern ---- */
+.ts{border-radius:var(--rs);backdrop-filter:blur(12px);border:none!important}
+.ts-s{background:linear-gradient(135deg,rgba(15,122,92,.16),rgba(15,122,92,.06))!important;color:var(--jade-d)!important}
+.ts-e{background:linear-gradient(135deg,rgba(181,32,43,.16),rgba(181,32,43,.06))!important;color:var(--lacq-d)!important}
+.ts-i{background:linear-gradient(135deg,rgba(201,151,31,.18),rgba(201,151,31,.06))!important;color:var(--gold-d)!important}
+
+/* ---- FOOTER richer dark gradient ---- */
+footer{background:var(--grad-dark)!important}
+.flt{background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* ---- SELECTED payment/type pills nicer ---- */
+.po2.sel{background:var(--grad-gold)!important;color:#fff!important;border-color:transparent!important}
+
+/* ---- Utility font toggle classes (set by JS via body class) ---- */
+body.font-poppins{--fd:'Poppins','Noto Sans Lao',sans-serif;--fb:'Noto Sans Lao','Poppins',sans-serif}
+body.font-kanit{--fd:'Kanit','Noto Sans Lao',sans-serif;--fb:'Noto Sans Lao','Kanit',sans-serif}
+body.font-prompt{--fd:'Prompt','Noto Sans Lao',sans-serif;--fb:'Noto Sans Lao','Prompt',sans-serif}
+body.font-playfair{--fd:'Playfair Display','Noto Sans Lao',serif;--fb:'Noto Sans Lao','Montserrat',sans-serif}
+body.radius-sharp{--r:6px;--rs:5px;--rl:8px}
+body.radius-round{--r:22px;--rs:16px;--rl:32px}
+
+@media(prefers-reduced-motion:reduce){.li::after,.hero::before,.hero::after,.bp::after,.bco::after{animation:none!important;display:none!important}}
 </style>
 </head>
 <body>
@@ -536,11 +664,11 @@ footer{background:var(--dark2);border-top:1.5px solid rgba(184,134,11,.15);paddi
 <header id="mh">
   <a class="logo" onclick="showPage('home')"><div class="li" id="liw">🍽️</div><div class="lt" id="hn">ຮ້ານ 3 ອ້າຍນ້ອງ</div></a>
   <nav>
-    <a onclick="showPage('home');scrollTo2('hs')" class="ac">🏠 ໜ້າຫຼັກ</a>
-    <a onclick="scrollTo2('ms')">🍜 ເມນູ</a>
-    <a onclick="scrollTo2('trk-section')">📍 ຕິດຕາມ</a>
-    <a onclick="openContactModal()">📞 ຕິດຕໍ່</a>
-    <a id="nav-admin" onclick="A.user?showPage('admin'):openLoginModal()" style="display:none">⚡ Admin</a>
+    <a onclick="showPage('home');scrollTo2('hs')" class="ac"><span id="ic-nav-home">🏠</span> ໜ້າຫຼັກ</a>
+    <a onclick="scrollTo2('ms')"><span id="ic-nav-menu">🍜</span> ເມນູ</a>
+    <a onclick="scrollTo2('trk-section')"><span id="ic-nav-track">📍</span> ຕິດຕາມ</a>
+    <a onclick="openContactModal()"><span id="ic-nav-contact">📞</span> ຕິດຕໍ່</a>
+    <a id="nav-admin" onclick="A.user?showPage('admin'):openLoginModal()" style="display:none"><span id="ic-nav-admin">⚡</span> Admin</a>
   </nav>
   <div class="hr">
     <div class="ld" id="ldd">
@@ -552,7 +680,7 @@ footer{background:var(--dark2);border-top:1.5px solid rgba(184,134,11,.15);paddi
       </div>
     </div>
     <div class="sb"><span style="color:var(--gray)">🔍</span><input type="text" id="hs2" placeholder="ຄົ້ນຫາ..." oninput="handleSearch(this.value)"></div>
-    <div class="cb" onclick="toggleCart()">🛒<div class="cbg" id="cbg">0</div></div>
+    <div class="cb" onclick="toggleCart()"><span id="ic-cart">🛒</span><div class="cbg" id="cbg">0</div></div>
     <button class="blg" id="ab" onclick="openLoginModal()" style="display:none"></button>
     <span class="hm" onclick="toggleMM()">☰</span>
   </div>
@@ -562,11 +690,11 @@ footer{background:var(--dark2);border-top:1.5px solid rgba(184,134,11,.15);paddi
 <div class="mm" id="mmenu">
   <div class="mms">
     <div class="mmh"></div>
-    <div class="mni" onclick="showPage('home');closeMM()">🏠 ໜ້າຫຼັກ</div>
-    <div class="mni" onclick="scrollTo2('ms');closeMM()">🍜 ເມນູ</div>
-    <div class="mni" onclick="scrollTo2('trk-section');closeMM()">📍 ຕິດຕາມ Order</div>
+    <div class="mni" onclick="showPage('home');closeMM()"><span id="ic-nav-home2">🏠</span> ໜ້າຫຼັກ</div>
+    <div class="mni" onclick="scrollTo2('ms');closeMM()"><span id="ic-nav-menu2">🍜</span> ເມນູ</div>
+    <div class="mni" onclick="scrollTo2('trk-section');closeMM()"><span id="ic-nav-track2">📍</span> ຕິດຕາມ Order</div>
     <div class="mni" id="mai" onclick="openLoginModal();closeMM()">👤 ເຂົ້າລະບົບ</div>
-    <div class="mni" onclick="openContactModal();closeMM()">📞 ຕິດຕໍ່</div>
+    <div class="mni" onclick="openContactModal();closeMM()"><span id="ic-nav-contact2">📞</span> ຕິດຕໍ່</div>
     <div class="mni" id="m-logout" onclick="logout();closeMM()" style="display:none;color:var(--red)">🚪 ອອກຈາກລະບົບ</div>
     <div class="mml">
       <div class="lbm ac" id="lm-lo" onclick="setLang('lo',null);closeMM()">🇱🇦 ລາວ</div>
@@ -582,7 +710,7 @@ footer{background:var(--dark2);border-top:1.5px solid rgba(184,134,11,.15);paddi
     <section class="hero" id="hs">
       <div class="hsl-wrap" id="hsl"></div>
       <div class="hc">
-        <div class="htg">⭐ ບໍລິການເປັນກັນເອງ</div>
+        <div class="htg"><span id="ic-hero-badge">⭐</span> ບໍລິການເປັນກັນເອງ</div>
         <h1 class="ht">ລົດຊາດດີ<br><span class="gd" id="htn">ຮ້ານ 3 ອ້າຍນ້ອງ</span></h1>
         <p class="hst" id="hsb">ອາຫານລາວ ໄທ ຈີນ ແລະ ອີກຫຼາຍຢ່າງ</p>
         <div class="ha">
@@ -668,31 +796,31 @@ footer{background:var(--dark2);border-top:1.5px solid rgba(184,134,11,.15);paddi
         <div style="font-family:var(--fd);font-size:var(--fb2);font-weight:700;color:var(--gold-d)">⚡ Admin Panel</div>
         <div style="font-size:var(--fxs);color:var(--gray);margin-top:2px" id="arl">Super Admin</div>
       </div>
-      <div class="ani ac" onclick="aTab('dashboard')"><span class="ni">📊</span>Dashboard</div>
-      <div class="ani" onclick="aTab('orders')"><span class="ni">📋</span>ລາຍການສັ່ງ <span class="nd" id="on" style="display:none;margin-left:4px"></span></div>
-      <div class="ani" onclick="aTab('tables')"><span class="ni">🪑</span>ຈັດການໂຕະ</div>
-      <div class="ani" onclick="aTab('menu')"><span class="ni">🍽️</span>ຈັດການເມນູ</div>
-      <div class="ani" onclick="aTab('categories')"><span class="ni">🗂️</span>ໝວດໝູ່</div>
-      <div class="ani" onclick="aTab('slides')"><span class="ni">🖼️</span>Slides</div>
-      <div class="ani" onclick="aTab('promotions')"><span class="ni">🎉</span>ໂປຣໂມຊັ່ນ</div>
+      <div class="ani ac" onclick="aTab('dashboard')"><span class="ni" id="ic-a-dashboard">📊</span>Dashboard</div>
+      <div class="ani" onclick="aTab('orders')"><span class="ni" id="ic-a-orders">📋</span>ລາຍການສັ່ງ <span class="nd" id="on" style="display:none;margin-left:4px"></span></div>
+      <div class="ani" onclick="aTab('tables')"><span class="ni" id="ic-a-tables">🪑</span>ຈັດການໂຕະ</div>
+      <div class="ani" onclick="aTab('menu')"><span class="ni" id="ic-a-menu">🍽️</span>ຈັດການເມນູ</div>
+      <div class="ani" onclick="aTab('categories')"><span class="ni" id="ic-a-categories">🗂️</span>ໝວດໝູ່</div>
+      <div class="ani" onclick="aTab('slides')"><span class="ni" id="ic-a-slides">🖼️</span>Slides</div>
+      <div class="ani" onclick="aTab('promotions')"><span class="ni" id="ic-a-promotions">🎉</span>ໂປຣໂມຊັ່ນ</div>
       <div style="padding:clamp(6px,2vw,8px) clamp(14px,4vw,22px);font-size:var(--fxs);color:var(--gray-l);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:8px;border-top:1px solid var(--border)">💹 ການເງິນ</div>
-      <div class="ani" onclick="aTab('finance')"><span class="ni">📒</span>ລາຍຮັບ-ລາຍຈ່າຍ</div>
-      <div class="ani" onclick="aTab('fin_report')"><span class="ni">📈</span>ລາຍງານການເງິນ</div>
-      <div class="ani" id="aun" onclick="aTab('users')"><span class="ni">👥</span>ຜູ້ໃຊ້</div>
-      <div class="ani" onclick="aTab('settings')"><span class="ni">⚙️</span>ຕັ້ງຄ່າ</div>
-      <div class="ani" onclick="aTab('logs')"><span class="ni">📜</span>Activity Logs</div>
+      <div class="ani" onclick="aTab('finance')"><span class="ni" id="ic-a-finance">📒</span>ລາຍຮັບ-ລາຍຈ່າຍ</div>
+      <div class="ani" onclick="aTab('fin_report')"><span class="ni" id="ic-a-finreport">📈</span>ລາຍງານການເງິນ</div>
+      <div class="ani" id="aun" onclick="aTab('users')"><span class="ni" id="ic-a-users">👥</span>ຜູ້ໃຊ້</div>
+      <div class="ani" onclick="aTab('settings')"><span class="ni" id="ic-a-settings">⚙️</span>ຕັ້ງຄ່າ</div>
+      <div class="ani" onclick="aTab('logs')"><span class="ni" id="ic-a-logs">📜</span>Activity Logs</div>
       <div style="position:sticky;bottom:0;padding:var(--ssm) 0;border-top:1px solid var(--border);background:var(--bg2)">
         <div class="ani" onclick="logout()" style="color:var(--red)">🚪 ອອກ</div>
         <div class="ani" onclick="showPage('home')">🏠 ໜ້າຫຼັກ</div>
       </div>
     </aside>
     <div class="amn" id="amn">
-      <div class="amni ac" onclick="aMobTab('dashboard',this)"><div class="ni">📊</div><div class="nl">Dashboard</div></div>
-      <div class="amni" onclick="aMobTab('orders',this)"><div class="ni">📋</div><div class="nl">Orders</div></div>
-      <div class="amni" onclick="aMobTab('tables',this)"><div class="ni">🪑</div><div class="nl">ໂຕະ</div></div>
-      <div class="amni" onclick="aMobTab('menu',this)"><div class="ni">🍽️</div><div class="nl">ເມນູ</div></div>
-      <div class="amni" onclick="aMobTab('finance',this)"><div class="ni">📒</div><div class="nl">ການເງິນ</div></div>
-      <div class="amni" onclick="aMobTab('settings',this)"><div class="ni">⚙️</div><div class="nl">ຕັ້ງຄ່າ</div></div>
+      <div class="amni ac" onclick="aMobTab('dashboard',this)"><div class="ni" id="ic-am-dashboard">📊</div><div class="nl">Dashboard</div></div>
+      <div class="amni" onclick="aMobTab('orders',this)"><div class="ni" id="ic-am-orders">📋</div><div class="nl">Orders</div></div>
+      <div class="amni" onclick="aMobTab('tables',this)"><div class="ni" id="ic-am-tables">🪑</div><div class="nl">ໂຕະ</div></div>
+      <div class="amni" onclick="aMobTab('menu',this)"><div class="ni" id="ic-am-menu">🍽️</div><div class="nl">ເມນູ</div></div>
+      <div class="amni" onclick="aMobTab('finance',this)"><div class="ni" id="ic-am-finance">📒</div><div class="nl">ການເງິນ</div></div>
+      <div class="amni" onclick="aMobTab('settings',this)"><div class="ni" id="ic-am-settings">⚙️</div><div class="nl">ຕັ້ງຄ່າ</div></div>
     </div>
     <main class="ac-content" id="ac"></main>
   </div>
@@ -1426,16 +1554,45 @@ function applySettings() {
   setEl('fph',s.phone||''); setEl('fad',s.address_lo||'');
   setEl('fcp','© 2026 '+nm+'. All rights reserved.');
   setEl('htn',nm); setEl('hsb',s.hero_subtitle_lo||'ອາຫານລາວ ໄທ ຈີນ ແລະ ອີກຫຼາຍຢ່າງ');
+
+  // ---- ສີທີມ (ຫຼັກ/ຮອງ/ທີສາມ) ----
   if (s.theme_color) {
     document.documentElement.style.setProperty('--gold', s.theme_color);
     document.documentElement.style.setProperty('--gold-d', darkHex(s.theme_color, 20));
+    document.documentElement.style.setProperty('--gold-l', lightHex(s.theme_color, 28));
   }
+  if (s.theme_color2) {
+    document.documentElement.style.setProperty('--lacq', s.theme_color2);
+    document.documentElement.style.setProperty('--lacq-d', darkHex(s.theme_color2, 25));
+    document.documentElement.style.setProperty('--lacq-l', lightHex(s.theme_color2, 20));
+  }
+  if (s.theme_color3) {
+    document.documentElement.style.setProperty('--jade', s.theme_color3);
+    document.documentElement.style.setProperty('--jade-d', darkHex(s.theme_color3, 30));
+    document.documentElement.style.setProperty('--jade-l', lightHex(s.theme_color3, 25));
+    document.documentElement.style.setProperty('--inc', s.theme_color3);
+  }
+
+  // ---- ຟອນ ----
+  document.body.classList.remove('font-poppins','font-kanit','font-prompt','font-playfair');
+  document.body.classList.add('font-'+(s.theme_font||'playfair'));
+
+  // ---- ຄວາມໂຄ້ງ (radius style) ----
+  document.body.classList.remove('radius-round','radius-sharp');
+  if (s.theme_radius === 'round') document.body.classList.add('radius-round');
+  if (s.theme_radius === 'sharp') document.body.classList.add('radius-sharp');
+
+  // ---- ໂໝດມືດ ----
+  document.body.classList.toggle('dark-mode', s.dark_mode === true || s.dark_mode === 'TRUE' || s.dark_mode === 'true');
+
   const liw = document.getElementById('liw');
-  if (liw) { const lu=cdurl(s.logo_url||''); liw.innerHTML=lu?'<img src="'+lu+'" onerror="this.parentNode.innerHTML=\'🍽️\'">':(getIcon('logo')); }
+  if (liw) { const lu=cdurl(s.logo_url||''); liw.innerHTML=lu?'<img src="'+lu+'" onerror="this.parentNode.innerHTML=\''+getIcon('logo')+'\'">':(getIcon('logo')); }
   const bkd = document.getElementById('bkd');
   if (bkd) bkd.innerHTML='🏦 <b>'+(s.bank_name||'')+'</b><br>📋 <b>'+(s.bank_account||'')+'</b><br>👤 <b>'+(s.bank_account_name||'')+'</b>';
   const qrw=document.getElementById('qrw'); const qri=document.getElementById('qri');
   if (qrw&&qri) { const q=cdurl(s.bank_qr_url||''); if(q){qri.src=q;qrw.style.display='block';}else qrw.style.display='none'; }
+
+  applyIconSettings();
 }
 function darkHex(h, p) {
   try {
@@ -1443,6 +1600,62 @@ function darkHex(h, p) {
     rv=Math.max(0,rv-Math.round(rv*p/100)); gv=Math.max(0,gv-Math.round(gv*p/100)); bv=Math.max(0,bv-Math.round(bv*p/100));
     return 'rgb('+rv+','+gv+','+bv+')';
   } catch(e) { return h; }
+}
+function lightHex(h, p) {
+  try {
+    let rv=parseInt(h.slice(1,3),16),gv=parseInt(h.slice(3,5),16),bv=parseInt(h.slice(5,7),16);
+    rv=Math.min(255,rv+Math.round((255-rv)*p/100)); gv=Math.min(255,gv+Math.round((255-gv)*p/100)); bv=Math.min(255,bv+Math.round((255-bv)*p/100));
+    return 'rgb('+rv+','+gv+','+bv+')';
+  } catch(e) { return h; }
+}
+
+// ============================================================
+// 🎨 ໄອຄອນ & ທີມ ປັບແຕ່ງໄດ້ (Icon & Theme Customization)
+// ============================================================
+const ICON_MAP = {
+  logo:        {label:'ໂລໂກ້ຮ້ານ (ໃຊ້ເມື່ອບໍ່ມີ Logo URL)', ids:[], default:'🍽️'},
+  hero:        {label:'ປ້າຍ Hero (⭐)',        ids:['ic-hero-badge'], default:'⭐'},
+  cart:        {label:'ກະຕ່າສິນຄ້າ',           ids:['ic-cart'], default:'🛒'},
+  nav_home:    {label:'ໜ້າຫຼັກ (Nav)',         ids:['ic-nav-home','ic-nav-home2'], default:'🏠'},
+  nav_menu:    {label:'ເມນູ (Nav)',            ids:['ic-nav-menu','ic-nav-menu2'], default:'🍜'},
+  nav_track:   {label:'ຕິດຕາມ Order (Nav)',    ids:['ic-nav-track','ic-nav-track2'], default:'📍'},
+  nav_contact: {label:'ຕິດຕໍ່ (Nav)',          ids:['ic-nav-contact','ic-nav-contact2'], default:'📞'},
+  nav_admin:   {label:'Admin (Nav)',           ids:['ic-nav-admin'], default:'⚡'},
+  dashboard:   {label:'Dashboard (Admin)',     ids:['ic-a-dashboard','ic-am-dashboard'], default:'📊'},
+  orders:      {label:'ລາຍການສັ່ງ (Admin)',    ids:['ic-a-orders','ic-am-orders'], default:'📋'},
+  tables:      {label:'ຈັດການໂຕະ (Admin)',     ids:['ic-a-tables','ic-am-tables'], default:'🪑'},
+  menu_admin:  {label:'ຈັດການເມນູ (Admin)',    ids:['ic-a-menu','ic-am-menu'], default:'🍽️'},
+  categories:  {label:'ໝວດໝູ່ (Admin)',        ids:['ic-a-categories'], default:'🗂️'},
+  slides:      {label:'Slides (Admin)',        ids:['ic-a-slides'], default:'🖼️'},
+  promotions:  {label:'ໂປຣໂມຊັ່ນ (Admin)',     ids:['ic-a-promotions'], default:'🎉'},
+  finance:     {label:'ລາຍຮັບ-ລາຍຈ່າຍ (Admin)',ids:['ic-a-finance','ic-am-finance'], default:'📒'},
+  finreport:   {label:'ລາຍງານການເງິນ (Admin)', ids:['ic-a-finreport'], default:'📈'},
+  users:       {label:'ຜູ້ໃຊ້ (Admin)',        ids:['ic-a-users'], default:'👥'},
+  settings:    {label:'ຕັ້ງຄ່າ (Admin)',       ids:['ic-a-settings','ic-am-settings'], default:'⚙️'},
+  logs:        {label:'Activity Logs (Admin)', ids:['ic-a-logs'], default:'📜'}
+};
+function getIcon(key){
+  const m=ICON_MAP[key]; if(!m) return '';
+  const v=(A.settings&&A.settings['icon_'+key])||'';
+  return (v&&v.trim())?v.trim():m.default;
+}
+function renderIconVal(val){
+  if(!val) return '';
+  const v=val.trim();
+  if(/^https?:\/\//i.test(v)) return '<img src="'+cdurl(v)+'" style="width:1.05em;height:1.05em;object-fit:contain;vertical-align:-0.18em;border-radius:3px" onerror="this.style.display=\'none\'">';
+  return v;
+}
+function applyIconSettings(){
+  Object.keys(ICON_MAP).forEach(key=>{
+    const m=ICON_MAP[key]; const val=getIcon(key);
+    m.ids.forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=renderIconVal(val); });
+  });
+}
+function iconPreview(key,val){
+  const p=document.getElementById('icp-'+key); if(p) p.innerHTML=renderIconVal(val||ICON_MAP[key].default);
+}
+function resetIcon(key){
+  const inp=document.getElementById('ici-'+key); if(inp){ inp.value=''; iconPreview(key,''); }
 }
 
 // ============================================================
@@ -2612,8 +2825,6 @@ async function rSettings(){
     '<div class="fg2"><label class="fl">ເລກບັນຊີ</label><input class="fi" id="sac" value="'+(s.bank_account||'')+'"></div>'+
     '<div class="fg2"><label class="fl">ຊື່ບັນຊີ</label><input class="fi" id="sacn" value="'+(s.bank_account_name||'')+'"></div>'+
     '<div class="fg2"><label class="fl">📱 QR Code URL</label><input class="fi" id="sqr" value="'+(s.bank_qr_url||'')+'" oninput="prevQR(this.value)"><div id="sqrw" style="'+(s.bank_qr_url?'':'display:none;')+'margin-top:7px"><img id="sqri" src="'+cdurl(s.bank_qr_url||'')+'" style="width:100px;height:100px;object-fit:contain;border-radius:8px;border:2px solid var(--border)" onerror="this.style.display=\'none\'"></div></div>'+
-    '<h3 style="font-family:var(--fd);margin:var(--smd) 0 var(--ssm);color:var(--dark)">🎨 Theme</h3>'+
-    '<div class="fg2"><label class="fl">ສີຫຼັກ</label><div style="display:flex;gap:8px;align-items:center"><input type="color" id="stcol" value="'+(s.theme_color||'#B8860B')+'" style="width:48px;height:34px;border:none;border-radius:6px;cursor:pointer" oninput="document.getElementById(\'stcolh\').value=this.value"><input class="fi" id="stcolh" value="'+(s.theme_color||'#B8860B')+'" style="flex:1" oninput="document.getElementById(\'stcol\').value=this.value"></div></div>'+
     '<div style="margin-top:var(--smd);background:rgba(192,57,43,.04);border:1.5px solid rgba(192,57,43,.15);border-radius:var(--rs);padding:var(--smd)"><h4 style="color:var(--red);margin-bottom:7px">🔧 Setup & Repair</h4><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="abt bd" style="padding:8px 16px" onclick="runSetup()">⚡ Run Setup</button><button class="abt bd" style="padding:8px 16px" onclick="runRepair()">🔧 Repair Orders</button></div></div>'+
     '</div></div>'+
     themeCustomizerHtml()+
@@ -2626,11 +2837,73 @@ async function saveSettings(){
   const data={restaurant_name_lo:getVal('sn-lo'),restaurant_name_th:getVal('sn-th'),restaurant_name_en:getVal('sn-en'),
     hero_subtitle_lo:getVal('sh-sub'),phone:getVal('sph'),address_lo:getVal('sad'),logo_url:getVal('slog'),
     delivery_fee:getVal('sdf'),tax_rate:getVal('stx2'),bank_name:getVal('sbk'),bank_account:getVal('sac'),
-    bank_account_name:getVal('sacn'),bank_qr_url:getVal('sqr'),theme_color:getVal('stcol')};
+    bank_account_name:getVal('sacn'),bank_qr_url:getVal('sqr'),
+    theme_color:getVal('stcolh')||getVal('stcol'),
+    theme_color2:getVal('stcol2h')||getVal('stcol2'),
+    theme_color3:getVal('stcol3h')||getVal('stcol3'),
+    theme_font:getVal('stfont')||'playfair',
+    theme_radius:getVal('stradius')||'default',
+    dark_mode:getVal('stdark')||'FALSE'};
+  Object.keys(ICON_MAP).forEach(key=>{ data['icon_'+key]=getVal('ici-'+key)||''; });
+  const btn=document.querySelector('#ac .bp[onclick="saveSettings()"]');
+  if(btn){btn.disabled=true;btn.textContent='⏳ ກຳລັງບັນທຶກ...';}
   const r=await api('updateSettings',data);
-  if(r&&r.success){toast('✅','success');await loadSettings();delete ADMIN_HTML_CACHE['settings'];rSettings();}else toast('❌','err');
+  if(btn){btn.disabled=false;btn.textContent='💾 ບັນທຶກ';}
+  if(r&&r.success){toast('✅ ບັນທຶກທີມ ແລະ ໄອຄອນສຳເລັດ','success');await loadSettings(true);delete ADMIN_HTML_CACHE['settings'];rSettings();}else toast('❌ '+(r?r.error:'Error'),'err');
 }
 async function runSetup(){toast('⏳...','info');const r=await api('setupInitialData',{});toast((r&&r.success)?'✅ '+(r.message||'Done!'):'❌',(r&&r.success)?'success':'err');}
+
+// ============================================================
+// 🎨 THEME & ICON CUSTOMIZER — ໜ້າ ຕັ້ງຄ່າ
+// ============================================================
+function themeCustomizerHtml(){
+  const s=A.settings||{};
+  const c1=s.theme_color||'#C9971F', c2=s.theme_color2||'#B5202B', c3=s.theme_color3||'#0F7A5C';
+  const font=s.theme_font||'playfair', radius=s.theme_radius||'default';
+  const dark=(s.dark_mode===true||s.dark_mode==='TRUE'||s.dark_mode==='true');
+  const colorRow=(id,label,val)=>
+    '<div class="fg2"><label class="fl">'+label+'</label><div style="display:flex;gap:8px;align-items:center">'+
+    '<input type="color" id="'+id+'" value="'+val+'" style="width:48px;height:34px;border:none;border-radius:8px;cursor:pointer" oninput="document.getElementById(\''+id+'h\').value=this.value">'+
+    '<input class="fi" id="'+id+'h" value="'+val+'" style="flex:1" oninput="document.getElementById(\''+id+'\').value=this.value"></div></div>';
+  const iconGrid=Object.keys(ICON_MAP).map(key=>{
+    const m=ICON_MAP[key]; const val=getIcon(key);
+    return '<div style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:8px 10px">'+
+      '<div id="icp-'+key+'" style="width:34px;height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.3rem;background:var(--bg2);border-radius:9px;border:1px solid var(--border)">'+renderIconVal(val)+'</div>'+
+      '<div style="flex:1;min-width:0"><div style="font-size:var(--fxs);color:var(--gray);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+m.label+'</div>'+
+      '<input class="fi" id="ici-'+key+'" value="'+(s['icon_'+key]||'')+'" placeholder="'+m.default+' ຫຼື ວາງ URL ຮູບ" style="padding:6px 9px;font-size:var(--fxs)" oninput="iconPreview(\''+key+'\',this.value)"></div>'+
+      '<button type="button" class="abt bd" style="padding:6px 9px;font-size:var(--fxs)" onclick="resetIcon(\''+key+'\')" title="ຄືນຄ່າເດີມ">↺</button>'+
+      '</div>';
+  }).join('');
+  return '<div style="background:var(--bg2);border:1.5px solid var(--gold);border-radius:var(--r);padding:var(--smd);margin-top:clamp(14px,4vw,18px);box-shadow:var(--glow)">'+
+    '<h3 style="font-family:var(--fd);margin-bottom:4px;color:var(--dark)">🎨 ທີມ & ໄອຄອນ (ປັບແຕ່ງໜ້າຕາທັງລະບົບ)</h3>'+
+    '<p style="font-size:var(--fxs);color:var(--gray);margin-bottom:var(--smd)">ປ່ຽນສີ, ຟອນ, ຄວາມໂຄ້ງ, ໂໝດມືດ ແລະ ໄອຄອນທຸກໜ້າ — ບັນທຶກແລ້ວຈະນຳໃຊ້ທັນທີທົ່ວແອັບ</p>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--smd);margin-bottom:var(--smd)">'+
+    colorRow('stcol','🟡 ສີຫຼັກ (ຄຳ)',c1)+colorRow('stcol2','🔴 ສີຮອງ (ແດງລາຍລັກ)',c2)+colorRow('stcol3','🟢 ສີທີສາມ (ຫຍົກ)',c3)+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--smd);margin-bottom:var(--smd)">'+
+    '<div class="fg2"><label class="fl">✍️ ຟອນຫົວຂໍ້</label><select class="fi" id="stfont">'+
+    ['playfair::Playfair Display (ຫຼູຫຼາຄລາສສິກ)','poppins::Poppins (ໂມເດິນ ມົນ)','kanit::Kanit (ໄທ-ລາວ ທັນສະໄໝ)','prompt::Prompt (Rounded ນຸ້ມນວນ)']
+      .map(o=>{const[v,l]=o.split('::');return '<option value="'+v+'" '+(font===v?'selected':'')+'>'+l+'</option>';}).join('')+
+    '</select></div>'+
+    '<div class="fg2"><label class="fl">◻️ ຄວາມໂຄ້ງມູມ</label><select class="fi" id="stradius">'+
+    ['default::ປົກກະຕິ','round::ມົນຫຼາຍ (ນຸ້ມນວນ)','sharp::ຄົມ (Minimal)']
+      .map(o=>{const[v,l]=o.split('::');return '<option value="'+v+'" '+(radius===v?'selected':'')+'>'+l+'</option>';}).join('')+
+    '</select></div>'+
+    '<div class="fg2"><label class="fl">🌙 ໂໝດມືດ</label><div class="po2'+(dark?' sel':'')+'" id="stdarkbtn" onclick="toggleDarkPreview()" style="cursor:pointer;text-align:left;padding:10px 14px">'+
+    '<span id="stdarklbl">'+(dark?'✅ ເປີດຢູ່':'⭕ ປິດຢູ່')+'</span></div><input type="hidden" id="stdark" value="'+(dark?'TRUE':'FALSE')+'"></div>'+
+    '</div>'+
+    '<h4 style="font-family:var(--fd);margin:var(--smd) 0 8px;color:var(--dark)">🔣 ໄອຄອນທຸກໜ້າ</h4>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;max-height:420px;overflow-y:auto;padding-right:4px">'+
+    iconGrid+
+    '</div></div>';
+}
+function toggleDarkPreview(){
+  const el=document.getElementById('stdark'); const btn=document.getElementById('stdarkbtn'); const lbl=document.getElementById('stdarklbl');
+  const now=el.value==='TRUE'; el.value=now?'FALSE':'TRUE';
+  btn.classList.toggle('sel',!now); lbl.textContent=(!now)?'✅ ເປີດຢູ່':'⭕ ປິດຢູ່';
+  document.body.classList.toggle('dark-mode',!now);
+}
+function renderThemeCustomizerValues(){ /* ຄ່າຖືກແຕ້ມໄວ້ໃນ HTML ຕັ້ງແຕ່ຕົ້ນແລ້ວ — ຟັງຊັນນີ້ໄວ້ສຳລັບຂະຫຍາຍໃນອະນາຄົດ */ }
 
 // ============================================================
 // ACTIVITY LOGS
