@@ -2640,14 +2640,10 @@ async function saveMenu(){
   const data={id,name_lo:getVal('mflo'),name_th:getVal('mfth'),name_en:getVal('mfen'),category_id:getVal('mfcat'),
     price:parseFloat(getVal('mfpr'))||0,special_price:parseFloat(getVal('mfsp'))||0,cost_price:parseFloat(getVal('mfcp'))||0,
     description_lo:getVal('mfdl'),image_url:getVal('mfimg'),table_note:getVal('mftbn'),unit:getVal('mfunit'),
+    addons: JSON.stringify(_mfAddons.filter(a=>a.name && a.name.trim())),
     is_available:document.getElementById('mfav').checked,is_promotion:document.getElementById('mfpm').checked,is_popular:document.getElementById('mfpop').checked};
   if(!data.name_lo||!data.price){toast('ໃສ່ຊື່ ແລະ ລາຄາ','err');return;}
   const r=await api(id?'updateMenuItem':'addMenuItem',data);
-  const data={id,name_lo:getVal('mflo'),name_th:getVal('mfth'),name_en:getVal('mfen'),category_id:getVal('mfcat'),
-    price:parseFloat(getVal('mfpr'))||0,special_price:parseFloat(getVal('mfsp'))||0,cost_price:parseFloat(getVal('mfcp'))||0,
-    description_lo:getVal('mfdl'),image_url:getVal('mfimg'),table_note:getVal('mftbn'),unit:getVal('mfunit'),
-    addons: JSON.stringify(_mfAddons.filter(a=>a.name && a.name.trim())),   // ← ໃສ່ແຖວນີ້
-    is_available:document.getElementById('mfav').checked,is_promotion:document.getElementById('mfpm').checked,is_popular:document.getElementById('mfpop').checked};
   if(r&&r.success){toast('✅ ບັນທຶກ','success');closeModal('mfm');rMenu();}
   else toast('❌ '+(r?r.error:'Error'),'err');
 }
