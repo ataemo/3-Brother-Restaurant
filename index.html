@@ -343,12 +343,12 @@ select.fi{cursor:pointer}textarea.fi{resize:vertical;min-height:72px}
 /* ADMIN */
 #ap{display:none}
 .al{display:flex;min-height:100dvh;margin-top:calc(var(--hh)+var(--st))}
-.asi{width:clamp(200px,25vw,234px);background:var(--bg2);border-right:1.5px solid var(--border);padding:var(--smd) 0;position:fixed;top:calc(var(--hh)+var(--st));bottom:0;left:0;overflow-y:auto;z-index:100;box-shadow:2px 0 16px rgba(0,0,0,.05);padding-bottom:var(--sb)}
+.asi{width:clamp(200px,25vw,234px);background:var(--bg2);border-right:1.5px solid var(--border);padding:var(--smd) 0;position:fixed;top:calc(var(--hh) + var(--st) + 6px);bottom:0;left:0;overflow-y:auto;z-index:100;box-shadow:2px 0 16px rgba(0,0,0,.05);padding-bottom:var(--sb)}
 .ani{display:flex;align-items:center;gap:12px;padding:clamp(11px,3vw,14px) clamp(16px,4vw,24px);cursor:pointer;transition:all .2s;color:var(--gray);font-size:var(--fmd);font-weight:500;border-left:3px solid transparent;touch-action:manipulation}
 .ani:hover{background:rgba(184,134,11,.06);color:var(--dark);border-left-color:rgba(184,134,11,.25)}
 .ani.ac{background:rgba(184,134,11,.10);color:var(--gold-d);border-left-color:var(--gold);font-weight:700}
 .ani .ni{font-size:1.25rem;width:24px;flex-shrink:0}
-.ac-content{margin-left:clamp(200px,25vw,234px);flex:1;padding:clamp(16px,4vw,30px);padding-top:calc(clamp(16px,4vw,30px) + var(--hh) + var(--st));min-height:calc(100vh - var(--hh));background:var(--bg);overflow-x:hidden}
+.ac-content{margin-left:clamp(200px,25vw,234px);flex:1;padding:clamp(16px,4vw,30px);padding-top:calc(clamp(16px,4vw,30px) + var(--hh) + var(--st) + 6px);min-height:calc(100vh - var(--hh));background:var(--bg);overflow-x:hidden}
 
 /* STATS */
 .sg{display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(140px,28vw,200px),1fr));gap:clamp(10px,2.5vw,16px);margin-bottom:clamp(16px,4vw,24px)}
@@ -2339,9 +2339,7 @@ function updateAuthUI(){
 // PAGES
 // ============================================================
 function showPage(pg){
-  if(pg === 'home' && _autoRefreshTimer){
-    clearInterval(_autoRefreshTimer); _autoRefreshTimer = null;
-  }
+  if(pg === 'home' && _autoRefreshTimer){ clearInterval(_autoRefreshTimer); _autoRefreshTimer = null; }
   document.getElementById('hp').style.display=pg==='home'?'block':'none';
   document.getElementById('ap').style.display=pg==='admin'?'block':'none';
   if(pg==='admin'){
@@ -2349,6 +2347,8 @@ function showPage(pg){
     setEl('arl',rl(A.user.role));
     const un=document.getElementById('aun'); if(un) un.style.display=A.user.role==='super_admin'?'flex':'none';
     aTab('dashboard');
+    syncHeaderHeight();                 // ✅ ເພີ່ມແຖວນີ້
+    setTimeout(syncHeaderHeight, 150);  // ✅ ເພີ່ມແຖວນີ້ (ເຜື່ອ layout ຍັງບໍ່ນິ້ງ)
   }
   window.scrollTo(0,0);
 }
@@ -3399,8 +3399,21 @@ function toast(msg,type='info'){
 function initScrollHdr(){
   window.addEventListener('scroll',()=>document.getElementById('mh').classList.toggle('scrolled',window.scrollY>50),{passive:true});
   syncHeaderHeight();
+
+  // ✅ ເພີ່ມ: ຄອຍເບິ່ງການປ່ຽນຂະໜາດ header ແບບ realtime (ແກ້ font-load, logo-load, resize)
+  const hdr = document.getElementById('mh');
+  if (hdr && window.ResizeObserver) {
+    new ResizeObserver(syncHeaderHeight).observe(hdr);
+  }
+
+  // ✅ ເພີ່ມ: sync ຄືນຫຼັງຟອນໂຫຼດສຳເລັດ (ແກ້ FOUT/FOIT)
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(syncHeaderHeight);
+  }
+
   window.addEventListener('resize', syncHeaderHeight);
-  setTimeout(syncHeaderHeight, 300); // ວັດຄືນຫຼັງໂລໂກ້/ຟອນໂຫຼດແລ້ວ
+  setTimeout(syncHeaderHeight, 300);
+  setTimeout(syncHeaderHeight, 1000); // ✅ ເພີ່ມ: ເຜື່ອກໍລະນີຊ້າກວ່ານັ້ນ
 }
 function syncHeaderHeight(){
   const h = document.getElementById('mh');
