@@ -1686,7 +1686,15 @@ function startTrkPoll(orderId, originalCode) {
 
         const full = await api('trackOrderByCode', { code: originalCode });
         if (full && full.success) renderTrkResult(full.data, full.table_orders || []);
-        if (o.status === 'completed' || o.status === 'cancelled') stopTrkPoll();
+        if (o.status === 'completed' || o.status === 'cancelled') {
+          stopTrkPoll();
+          setTimeout(() => {
+            document.getElementById('trk-inp').value = '';
+            document.getElementById('trk-result2').style.display = 'none';
+            document.getElementById('trk-result2').innerHTML = '';
+            _trkOrderId = null;
+          }, 5000); // ລໍ 5 ວິນາທີໃຫ້ລູກຄ້າເຫັນຄຳວ່າ "ສຳເລັດ" ກ່ອນ ແລ້ວຄ່ອຍລ້າງໜ້າຈໍ
+        }
       }
     } catch(e) {}
   }, POLL_INTERVAL);
