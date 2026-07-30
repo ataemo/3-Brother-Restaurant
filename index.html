@@ -1784,6 +1784,7 @@ function applySettings() {
 
   const liw = document.getElementById('liw');
   if (liw) { const lu=cdurl(s.logo_url||''); liw.innerHTML=lu?'<img src="'+lu+'" onerror="this.parentNode.innerHTML=\''+getIcon('logo')+'\'">':(getIcon('logo')); }
+  setTimeout(syncHeaderHeight, 100);
   const bkd = document.getElementById('bkd');
   if (bkd) bkd.innerHTML='🏦 <b>'+(s.bank_name||'')+'</b><br>📋 <b>'+(s.bank_account||'')+'</b><br>👤 <b>'+(s.bank_account_name||'')+'</b>';
   const qrw=document.getElementById('qrw'); const qri=document.getElementById('qri');
@@ -3395,7 +3396,16 @@ function toast(msg,type='info'){
   t.className='ts ts-'+(type==='err'?'e':type==='success'?'s':'i');t.textContent=msg;
   c.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(30px)';setTimeout(()=>t.remove(),300);},3500);
 }
-function initScrollHdr(){window.addEventListener('scroll',()=>document.getElementById('mh').classList.toggle('scrolled',window.scrollY>50),{passive:true});}
+function initScrollHdr(){
+  window.addEventListener('scroll',()=>document.getElementById('mh').classList.toggle('scrolled',window.scrollY>50),{passive:true});
+  syncHeaderHeight();
+  window.addEventListener('resize', syncHeaderHeight);
+  setTimeout(syncHeaderHeight, 300); // ວັດຄືນຫຼັງໂລໂກ້/ຟອນໂຫຼດແລ້ວ
+}
+function syncHeaderHeight(){
+  const h = document.getElementById('mh');
+  if(h) document.documentElement.style.setProperty('--hh', h.offsetHeight + 'px');
+}
 window.addEventListener('resize',()=>{if(window.innerWidth>900)document.getElementById('mmenu').classList.remove('open');});
 function editTable(id) {
   const t = A.tables.find(x => x.id === id);
