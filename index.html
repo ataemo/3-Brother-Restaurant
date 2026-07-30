@@ -2347,7 +2347,7 @@ function showPage(pg){
     if(!A.user){openLoginModal();return;}
     setEl('arl',rl(A.user.role));
     const un=document.getElementById('aun'); if(un) un.style.display=A.user.role==='super_admin'?'flex':'none';
-    <div class="ani ac" onclick="aTab('dashboard')"><span class="ni" id="ic-a-dashboard">📊</span>Dashboard</div>
+    aTab('dashboard');
   }
   window.scrollTo(0,0);
 }
