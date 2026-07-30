@@ -1177,6 +1177,22 @@ async function pollForNewOrders() {
       }
     });
 
+    if (!window._knownCheckoutReq) window._knownCheckoutReq = new Set();
+    const tblR = await api('getTables', {});
+    if (tblR && tblR.success) {
+      (tblR.data||[]).forEach(t => {
+        const noteVal = (t.note||'').toString();
+        if (noteVal.startsWith('CHECKOUT_REQUESTED|') && !window._knownCheckoutReq.has(t.id)) {
+          window._knownCheckoutReq.add(t.id);
+          sendNotif('🧾 ລູກຄ້າຂໍເຊັກບິນ!', 'ໂຕະ ' + t.code + ' ພ້ອມອອກບິນແລ້ວ', null);
+          toast('🧾 ໂຕະ ' + t.code + ' ຂໍເຊັກບິນ!', 'success');
+          playStatusSound('confirmed');
+        }
+        if (!noteVal.startsWith('CHECKOUT_REQUESTED|')) window._knownCheckoutReq.delete(t.id);
+      });
+      A.tables = tblR.data;
+    }
+
     const pending = orders.filter(o => o.status === 'pending').length;
     updateOrderBadge(pending);
 
@@ -1495,13 +1511,58 @@ function renderTrkResult(o, tableOrders) {
     isClaimed
     ? '<div style="margin-top:10px;padding:8px 12px;background:rgba(184,134,11,.15);border:1px solid rgba(255,215,0,.3);border-radius:8px;font-size:var(--fxs);color:var(--gold-l);text-align:center">⏳ ແຈ້ງໂອນແລ້ວ — ລໍຖ້າຮ້ານກວດຢືນຢັນ</div>'
     : '<button onclick="reportPaidByCustomer(\''+o.id+'\','+o.total+',this)" style="width:100%;margin-top:10px;padding:10px;border:none;border-radius:8px;background:linear-gradient(135deg,#1A7A4A,#4CAF50);color:#fff;font-family:var(--fb);font-size:var(--fsm);font-weight:700;cursor:pointer">✅ ຂ້ອຍໄດ້ໂອນເງິນແລ້ວ</button>';
+  window._trkCurOrder = o;
+  window._trkCurTableOrders = tableOrders;
+
+  const detailBtn = '<button onclick="showTrkFullDetail()" style="width:100%;margin-top:10px;padding:9px;border:1.5px solid var(--gold-l);border-radius:8px;background:rgba(255,215,0,.08);color:var(--gold-l);font-family:var(--fb);font-size:var(--fsm);font-weight:700;cursor:pointer">📋 ເບິ່ງລາຍລະອຽດ Order</button>';
+
+  const alreadyReq = (o.table_note_flag||'').toString().startsWith('CHECKOUT_REQUESTED');
+  const checkoutBtn = (o.table_code && o.status!=='cancelled' && o.status!=='completed')
+    ? '<button id="trk-checkout-btn" onclick="requestCheckout(\''+o.table_code+'\',this)" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:8px;background:linear-gradient(135deg,#C0392B,#E74C3C);color:#fff;font-family:var(--fb);font-size:var(--fsm);font-weight:700;cursor:pointer">🧾 ຂໍເຊັກບິນ / Checkout</button>'
+    : '';
+
   res.style.display = 'block';
   res.innerHTML =
     '<div style="color:rgba(255,255,255,.8);font-size:var(--fxs);margin-bottom:8px">'+
     '<b style="color:var(--gold-l)">#'+(o.id||'').slice(0,7).toUpperCase()+'</b> — '+o.customer_name+tableInfo+
     '<span style="float:right;color:rgba(255,255,255,.5)">'+fp(o.total)+'</span></div>'+
     '<div class="st-steps">'+stepsHtml+'</div>'+
-    otherOrds + cancelledHtml + pollingBadge + payBtnHtml;
+    otherOrds + cancelledHtml + pollingBadge + payBtnHtml + detailBtn + checkoutBtn;
+}
+
+function showTrkFullDetail() {
+  const o = window._trkCurOrder;
+  const tableOrders = window._trkCurTableOrders || [];
+  if (!o) return;
+  const allOrders = [o, ...tableOrders].filter(x => x.status !== 'cancelled');
+  let grandTotal = 0;
+  const itemsHtml = allOrders.map(ord => {
+    grandTotal += parseFloat(ord.total)||0;
+    const rows = (ord.items||[]).map(i =>
+      '<div style="display:flex;justify-content:space-between;font-size:var(--fsm);padding:4px 0;border-bottom:1px solid var(--border)">'+
+      '<span>'+i.menu_name+(i.item_note?' <span style="color:var(--orange)">📝 '+i.item_note+'</span>':'')+' x'+i.quantity+'</span>'+
+      '<span style="font-weight:700">'+fp(i.total_price)+'</span></div>'
+    ).join('') || '<div style="font-size:var(--fxs);color:var(--gray);padding:4px 0">-</div>';
+    return '<div style="margin-bottom:12px"><div style="font-size:var(--fxs);color:var(--gold-d);font-weight:700;margin-bottom:4px">Order #'+(ord.id||'').slice(0,7).toUpperCase()+' <span class="bgs '+sclass(ord.status)+'">'+ord.status+'</span></div>'+rows+'</div>';
+  }).join('');
+  document.getElementById('odb').innerHTML =
+    '<div style="padding:4px 0">'+itemsHtml+
+    '<div style="display:flex;justify-content:space-between;font-size:var(--fmd);font-weight:800;padding-top:10px;margin-top:6px;border-top:2px solid var(--border);color:var(--gold-d)">'+
+    '<span>ລວມທັງໝົດ (ໂຕະ)</span><span>'+fp(grandTotal)+'</span></div></div>';
+  openModal('odm');
+}
+
+async function requestCheckout(tableCode, btn) {
+  if (!confirm('ຢືນຢັນຂໍເຊັກບິນ ໂຕະ '+tableCode+'? ພະນັກງານຈະໄດ້ຮັບການແຈ້ງເຕືອນ')) return;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ ກຳລັງແຈ້ງ...'; }
+  const r = await api('requestCheckout', { table_code: tableCode });
+  if (r && r.success) {
+    toast('✅ ແຈ້ງພະນັກງານແລ້ວ ລໍຖ້າອອກບິນ', 'success');
+    if (btn) { btn.textContent = '✅ ແຈ້ງແລ້ວ — ລໍພະນັກງານ'; }
+  } else {
+    if (btn) { btn.disabled = false; btn.textContent = '🧾 ຂໍເຊັກບິນ / Checkout'; }
+    toast('❌ ' + (r ? r.error : 'Error'), 'err');
+  }
 }
 
 let _trkLastStatus = null;
@@ -2355,7 +2416,9 @@ async function rTables(){
     '<div class="tbl-grid" id="tbl-grid">'+
     A.tables.map(t=>{
       const tc=(t.code||'').toUpperCase(); const ao=activeByTable[tc]; const isOcc=ao&&ao.orders.length>0;
-      return '<div class="tbl-card '+(isOcc?'occ':'avail')+'" onclick="viewTableOrders(\''+t.code+'\')">'+
+      const wantsCheckout=(t.note||'').toString().startsWith('CHECKOUT_REQUESTED|');
+      return '<div class="tbl-card '+(isOcc?'occ':'avail')+'" style="'+(wantsCheckout?'border-color:#C0392B;box-shadow:0 0 0 2px rgba(192,57,43,.25)':'')+'" onclick="viewTableOrders(\''+t.code+'\')">'+
+      (wantsCheckout?'<div style="position:absolute;top:-8px;right:-8px;background:#C0392B;color:#fff;font-size:.6rem;font-weight:800;padding:3px 8px;border-radius:50px;animation:bl2 1s infinite">🧾 ຂໍບິນ</div>':'')+
         '<div class="tbl-icon">'+(isOcc?'🍽️':'🪑')+'</div>'+
         '<div class="tbl-code">'+t.code+'</div>'+
         '<div class="tbl-name">'+(t.name||'')+' ('+(t.capacity||4)+'ຄົນ)</div>'+
