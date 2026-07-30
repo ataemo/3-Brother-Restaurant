@@ -933,6 +933,10 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
       <div id="song-pane-request">
         <div class="fg2"><label class="fl">🎤 ຊື່ເພງ *</label><input class="fi" id="sr-title" placeholder="ຊື່ເພງ..."></div>
         <div class="fg2"><label class="fl">🎙️ ນັກຮ້ອງ</label><input class="fi" id="sr-artist" placeholder="ຊື່ນັກຮ້ອງ (ຖ້າມີ)"></div>
+        <div class="fg2"><label class="fl">🔗 ລິ້ງ YouTube <span style="color:var(--gray-l);font-weight:400">(ຖ້າມີ — ຈະຂຶ້ນຮູບໜ້າປົກໃຫ້ອັດຕະໂນມັດ)</span></label>
+        <input class="fi" id="sr-youtube" placeholder="https://youtube.com/watch?v=..." oninput="srPrevThumb()">
+        <img id="sr-thumbp" src="" style="width:100%;max-width:220px;height:120px;object-fit:cover;border-radius:8px;margin-top:8px;display:none">
+        </div>
         <div class="fg2"><label class="fl">🪑 ໂຕະ</label><select class="fi" id="sr-table"><option value="">-- ບໍ່ລະບຸໂຕະ --</option></select></div>
         <button class="bp" style="width:100%" onclick="submitSongRequest()">🎵 ສົ່ງຄຳຂໍ</button>
       </div>
@@ -1247,6 +1251,27 @@ async function pollForNewOrders() {
       A.tables = tblR.data;
     }
 
+    // ★ ແຈ້ງເຕືອນ ຂໍເພງໃໝ່
+    if (!window._knownSongReqs) window._knownSongReqs = new Set();
+    const songR = await api('getSongRequests', {});
+    if (songR && songR.success) {
+      if (window._knownSongReqs.size === 0) {
+        (songR.data||[]).forEach(s => window._knownSongReqs.add(s.id));
+      } else {
+        const newSongs = (songR.data||[]).filter(s => !window._knownSongReqs.has(s.id));
+        newSongs.forEach(s => {
+          window._knownSongReqs.add(s.id);
+          const tbl = s.table_code ? '🪑 ' + s.table_code : '📦 -';
+          const body = tbl + '\n🎵 ' + s.song_title + (s.artist ? ' — ' + s.artist : '');
+          sendNotif('🎶 ຂໍເພງໃໝ່!', body, null);
+          toast('🎶 ຂໍເພງໃໝ່! ' + tbl + ' — ' + s.song_title, 'success');
+          playStatusSound('song');
+        });
+      }
+      const pendingSongs = (songR.data||[]).filter(s => s.status === 'pending').length;
+      updateSongBadge(pendingSongs);
+    }
+
     const pending = orders.filter(o => o.status === 'pending').length;
     updateOrderBadge(pending);
 
@@ -1279,6 +1304,28 @@ function updateOrderBadge(count) {
   } else {
     const nm = (A.settings && A.settings.restaurant_name_lo) || 'ຮ້ານ 3 ອ້າຍນ້ອງ';
     document.title = nm;
+  }
+}
+
+function updateSongBadge(count) {
+  const nd = document.getElementById('sn');
+  if (nd) nd.style.display = count > 0 ? 'inline-block' : 'none';
+
+  const mobSongs = document.querySelector('.amni[onclick*="songs"]');
+  if (mobSongs) {
+    let badge = mobSongs.querySelector('.mob-badge-song');
+    if (count > 0) {
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'mob-badge-song';
+        badge.style.cssText = 'position:absolute;top:2px;right:2px;background:var(--red);color:#fff;border-radius:50%;width:16px;height:16px;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center';
+        mobSongs.style.position = 'relative';
+        mobSongs.appendChild(badge);
+      }
+      badge.textContent = count;
+    } else if (badge) {
+      badge.remove();
+    }
   }
 }
 
@@ -1510,6 +1557,7 @@ function playStatusSound(status) {
     else if (status === 'delivering') { beep(500,0,.15); beep(700,.16,.15); }
     else if (status === 'completed') { beep(523,0,.12); beep(659,.13,.12); beep(784,.26,.12); beep(1047,.39,.2); }
     else if (status === 'cancelled') { beep(300,0,.2); beep(220,.22,.25,0.3); }
+    else if (status === 'song') { beep(659,0,.12); beep(880,.12,.12); beep(1047,.24,.18); }
     else { beep(800,0,.15); }
   } catch(e) {}
 }
@@ -3131,10 +3179,18 @@ async function loadSongCatalog() {
     '<span style="font-size:1.3rem">➕</span></div>'
   ).join('');
 }
+function srPrevThumb(){
+  const url = getVal('sr-youtube');
+  const t = extractYoutubeThumbClient(url);
+  const p = document.getElementById('sr-thumbp');
+  if (p) { if (t) { p.src = t; p.style.display = 'block'; } else p.style.display = 'none'; }
+}
 function quickRequestSong(catalogId) {
   const s = _songCatalog.find(x => x.id === catalogId); if (!s) return;
   setVal('sr-title', s.title); setVal('sr-artist', s.artist||'');
-  window._srYoutube = s.youtube_url||''; window._srThumb = s.thumbnail_url||'';
+  setVal('sr-youtube', s.youtube_url||'');
+  window._srThumb = s.thumbnail_url||'';
+  srPrevThumb();
   songTab('request');
   toast('✅ ເລືອກເພງແລ້ວ ກົດ "ສົ່ງຄຳຂໍ" ເພື່ອຢືນຢັນ', 'success');
 }
@@ -3143,15 +3199,18 @@ async function submitSongRequest() {
   if (!title) { toast('ໃສ່ຊື່ເພງກ່ອນ', 'err'); return; }
   const artist = getVal('sr-artist').trim();
   const table = getVal('sr-table');
+  const ytUrl = getVal('sr-youtube').trim();
+  const thumb = ytUrl ? extractYoutubeThumbClient(ytUrl) : (window._srThumb || '');
   const btn = document.querySelector('#song-pane-request .bp');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ ກຳລັງສົ່ງ...'; }
   const r = await api('requestSong', { song_title: title, artist, table_code: table,
-    youtube_url: window._srYoutube || '', thumbnail_url: window._srThumb || '' });
+    youtube_url: ytUrl, thumbnail_url: thumb });
   if (btn) { btn.disabled = false; btn.textContent = '🎵 ສົ່ງຄຳຂໍ'; }
-  window._srYoutube=''; window._srThumb='';
+  window._srThumb='';
   if (r && r.success) {
     toast('✅ ສົ່ງຄຳຂໍເພງແລ້ວ!', 'success');
-    setVal('sr-title',''); setVal('sr-artist','');
+    setVal('sr-title',''); setVal('sr-artist',''); setVal('sr-youtube','');
+    const p=document.getElementById('sr-thumbp'); if(p) p.style.display='none';
     loadSongHistory(); songTab('history');
   } else toast('❌ ' + (r?r.error:'Error'), 'err');
 }
@@ -3162,12 +3221,14 @@ async function loadSongHistory() {
   if (!list.length) { c.innerHTML = '<div class="es"><div class="ei">🎵</div><h3>ຍັງບໍ່ມີການຂໍເພງ</h3></div>'; return; }
   const lbl = {pending:'⏳ ລໍຖ້າ',playing:'🎶 ກຳລັງເປີດ',played:'✅ ເປີດແລ້ວ',rejected:'❌ ຍົກເລີກ'};
   c.innerHTML = list.map(s =>
-    '<div class="song-req-card'+(s.status==='playing'?' playing':'')+'">'+
+    '<div class="song-req-card'+(s.status==='playing'?' playing':'')+'" style="display:flex;gap:10px;align-items:center">'+
+    (s.thumbnail_url?'<img src="'+s.thumbnail_url+'" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" onerror="this.style.display=\'none\'">':'<div style="width:56px;height:56px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0">🎵</div>')+
+    '<div style="flex:1;min-width:0">'+
     '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center">'+
     '<div><b>🎵 '+s.song_title+'</b>'+(s.artist?' — '+s.artist:'')+'</div>'+
-    '<span class="bgs" style="background:rgba(184,134,11,.1);color:var(--gold-d)">'+(lbl[s.status]||s.status)+'</span></div>'+
+    '<span class="bgs" style="background:rgba(184,134,11,.1);color:var(--gold-d);white-space:nowrap">'+(lbl[s.status]||s.status)+'</span></div>'+
     '<div style="font-size:var(--fxs);color:var(--gray);margin-top:4px">'+(s.table_code?'🪑 '+s.table_code+' | ':'')+fd(s.requested_at)+'</div>'+
-    '</div>'
+    '</div></div>'
   ).join('');
 }
 
@@ -3182,9 +3243,10 @@ async function rSongs() {
   document.getElementById('ac').innerHTML =
     '<div class="tb"><div class="tb-t">🎵 ຄິວຂໍເພງ ('+list.length+')</div>'+
     '<div style="display:flex;gap:8px"><button class="bp" onclick="openSongCatalogAdmin()">🎼 ຈັດການລາຍການເພງ</button></div></div>'+
-    '<div class="dtw"><table class="dt"><thead><tr><th>ໂຕະ</th><th>ເພງ</th><th>ນັກຮ້ອງ</th><th>YouTube</th><th>ສະຖານະ</th><th>ເວລາຂໍ</th><th>Actions</th></tr></thead><tbody>'+
+    '<div class="dtw"><table class="dt"><thead><tr><th>ຮູບ</th><th>ໂຕະ</th><th>ເພງ</th><th>ນັກຮ້ອງ</th><th>YouTube</th><th>ສະຖານະ</th><th>ເວລາຂໍ</th><th>Actions</th></tr></thead><tbody>'+
     list.map(s =>
       '<tr>'+
+      '<td>'+(s.thumbnail_url?'<img src="'+s.thumbnail_url+'" style="width:50px;height:50px;object-fit:cover;border-radius:8px" onerror="this.style.display=\'none\'">':'<div style="width:50px;height:50px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:1.3rem">🎵</div>')+'</td>'+
       '<td>'+(s.table_code?'<span style="background:rgba(200,90,26,.1);color:var(--orange);padding:3px 10px;border-radius:50px;font-weight:700">🪑 '+s.table_code+'</span>':'<span style="color:var(--gray)">-</span>')+'</td>'+
       '<td><b>'+s.song_title+'</b></td>'+
       '<td>'+(s.artist||'-')+'</td>'+
