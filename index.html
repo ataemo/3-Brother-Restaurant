@@ -281,6 +281,14 @@ section{padding:clamp(36px,8vw,64px) 0}
 /* TABLE INFO BANNER in cart */
 .cart-tbl-info{margin-top:6px;padding:8px 12px;background:rgba(200,90,26,.06);border:1px solid rgba(200,90,26,.25);border-radius:8px;font-size:var(--fxs);display:none}
 .cart-tbl-info.show{display:block}
+.song-list-item{display:flex;gap:10px;align-items:center;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:8px;cursor:pointer;transition:all .2s}
+.song-list-item:hover{border-color:var(--gold);background:rgba(184,134,11,.06)}
+.song-thumb{width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;background:var(--bg3)}
+.song-req-card{padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:8px}
+.song-req-card.playing{border-color:var(--gold);background:rgba(184,134,11,.06)}
+.sr-tabs{display:flex;gap:6px;margin-bottom:var(--smd)}
+.sr-tab{flex:1;text-align:center;padding:9px;border-radius:50px;border:1.5px solid var(--border);background:var(--bg3);cursor:pointer;font-size:var(--fsm);font-weight:700;color:var(--gray)}
+.sr-tab.ac{background:var(--grad-gold);color:#fff;border-color:transparent}
 
 /* MODALS */
 .mov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3000;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px)}
@@ -705,6 +713,7 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
     </div>
     <div class="sb"><span style="color:var(--gray)">🔍</span><input type="text" id="hs2" placeholder="ຄົ້ນຫາ..." oninput="handleSearch(this.value)"></div>
     <div class="cb" onclick="toggleCart()"><span id="ic-cart">🛒</span><div class="cbg" id="cbg">0</div></div>
+    <div class="cb" onclick="openSongModal()" title="ຂໍເພງ"><span>🎵</span></div>
     <button class="blg" id="ab" onclick="openLoginModal()" style="display:none"></button>
     <span class="hm" onclick="toggleMM()">☰</span>
   </div>
@@ -827,6 +836,7 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
       <div class="ani" onclick="aTab('categories')"><span class="ni" id="ic-a-categories">🗂️</span>ໝວດໝູ່</div>
       <div class="ani" onclick="aTab('slides')"><span class="ni" id="ic-a-slides">🖼️</span>Slides</div>
       <div class="ani" onclick="aTab('promotions')"><span class="ni" id="ic-a-promotions">🎉</span>ໂປຣໂມຊັ່ນ</div>
+      <div class="ani" onclick="aTab('songs')"><span class="ni" id="ic-a-songs">🎵</span>ຄິວເພງ <span class="nd" id="sn" style="display:none;margin-left:4px"></span></div>
       <div style="padding:clamp(6px,2vw,8px) clamp(14px,4vw,22px);font-size:var(--fxs);color:var(--gray-l);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:8px;border-top:1px solid var(--border)">💹 ການເງິນ</div>
       <div class="ani" onclick="aTab('finance')"><span class="ni" id="ic-a-finance">📒</span>ລາຍຮັບ-ລາຍຈ່າຍ</div>
       <div class="ani" onclick="aTab('fin_report')"><span class="ni" id="ic-a-finreport">📈</span>ລາຍງານການເງິນ</div>
@@ -843,6 +853,7 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
       <div class="amni" onclick="aMobTab('orders',this)"><div class="ni" id="ic-am-orders">📋</div><div class="nl">Orders</div></div>
       <div class="amni" onclick="aMobTab('tables',this)"><div class="ni" id="ic-am-tables">🪑</div><div class="nl">ໂຕະ</div></div>
       <div class="amni" onclick="aMobTab('menu',this)"><div class="ni" id="ic-am-menu">🍽️</div><div class="nl">ເມນູ</div></div>
+      <div class="amni" onclick="aMobTab('songs',this)"><div class="ni" id="ic-am-songs">🎵</div><div class="nl">ເພງ</div></div>
       <div class="amni" onclick="aMobTab('finance',this)"><div class="ni" id="ic-am-finance">📒</div><div class="nl">ການເງິນ</div></div>
       <div class="amni" onclick="aMobTab('settings',this)"><div class="ni" id="ic-am-settings">⚙️</div><div class="nl">ຕັ້ງຄ່າ</div></div>
     </div>
@@ -904,6 +915,32 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
         <span style="font-size:1.8rem">📞</span> ໂທຫາ
       </a>
       <div id="ct-address" style="padding:14px 16px;background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--r);font-size:var(--fsm);color:var(--gray)"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SONG REQUEST MODAL -->
+<div class="mov" id="songm">
+  <div class="mod wide" onclick="event.stopPropagation()">
+    <div class="mhd"><h3>🎵 ຂໍເພງ</h3><button class="clb" onclick="closeModal('songm')">✕</button></div>
+    <div class="mbd">
+      <div class="sr-tabs">
+        <div class="sr-tab ac" id="srtab-req" onclick="songTab('request')">✍️ ຂໍເພງ</div>
+        <div class="sr-tab" id="srtab-list" onclick="songTab('list')">🎼 ລາຍການເພງ</div>
+        <div class="sr-tab" id="srtab-hist" onclick="songTab('history')">📜 ຄິວເພງ</div>
+      </div>
+      <div id="song-pane-request">
+        <div class="fg2"><label class="fl">🎤 ຊື່ເພງ *</label><input class="fi" id="sr-title" placeholder="ຊື່ເພງ..."></div>
+        <div class="fg2"><label class="fl">🎙️ ນັກຮ້ອງ</label><input class="fi" id="sr-artist" placeholder="ຊື່ນັກຮ້ອງ (ຖ້າມີ)"></div>
+        <div class="fg2"><label class="fl">🪑 ໂຕະ</label><select class="fi" id="sr-table"><option value="">-- ບໍ່ລະບຸໂຕະ --</option></select></div>
+        <button class="bp" style="width:100%" onclick="submitSongRequest()">🎵 ສົ່ງຄຳຂໍ</button>
+      </div>
+      <div id="song-pane-list" style="display:none">
+        <div id="song-catalog-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+      <div id="song-pane-history" style="display:none">
+        <div id="song-history-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -2255,7 +2292,7 @@ function aTab(tab){
     dashboard: rDash, orders: rOrders, tables: rTables, menu: rMenu,
     categories: rCats, slides: rSlides, promotions: rPromos,
     finance: rFinance, fin_report: rFinReport, users: rUsers,
-    settings: rSettings, logs: rLogs
+    settings: rSettings, logs: rLogs, songs: rSongs
   };
   if(fns[tab]){
     if (ADMIN_HTML_CACHE[tab]) {
@@ -3044,6 +3081,146 @@ function toggleDarkPreview(){
   document.body.classList.toggle('dark-mode',!now);
 }
 function renderThemeCustomizerValues(){ /* ຄ່າຖືກແຕ້ມໄວ້ໃນ HTML ຕັ້ງແຕ່ຕົ້ນແລ້ວ — ຟັງຊັນນີ້ໄວ້ສຳລັບຂະຫຍາຍໃນອະນາຄົດ */ }
+
+// ============================================================
+// 🎵 SONG REQUEST — CUSTOMER SIDE
+// ============================================================
+let _songCatalog = [];
+function openSongModal() {
+  populateSongTableSel(); songTab('request'); loadSongCatalog(); loadSongHistory(); openModal('songm');
+}
+function populateSongTableSel() {
+  const sel = document.getElementById('sr-table'); if (!sel) return;
+  sel.innerHTML = '<option value="">-- ບໍ່ລະບຸໂຕະ --</option>' +
+    A.tables.map(t => '<option value="'+t.code+'">🪑 '+t.code+' — '+t.name+'</option>').join('');
+  if (A.selTable) sel.value = A.selTable;
+}
+function songTab(tab) {
+  ['request','list','history'].forEach(t => {
+    document.getElementById('song-pane-'+t).style.display = (t===tab) ? 'block' : 'none';
+    document.getElementById('srtab-'+(t==='request'?'req':t==='list'?'list':'hist')).classList.toggle('ac', t===tab);
+  });
+}
+async function loadSongCatalog() {
+  const r = await api('getSongCatalog', {});
+  _songCatalog = (r && r.success) ? r.data : [];
+  const c = document.getElementById('song-catalog-list'); if (!c) return;
+  if (!_songCatalog.length) { c.innerHTML = '<div class="es"><div class="ei">🎼</div><h3>ຍັງບໍ່ມີລາຍການເພງ</h3></div>'; return; }
+  c.innerHTML = _songCatalog.map(s =>
+    '<div class="song-list-item" onclick="quickRequestSong(\''+s.id+'\')">'+
+    '<img class="song-thumb" src="'+(s.thumbnail_url||'')+'" onerror="this.style.opacity=0">'+
+    '<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:var(--fsm)">'+s.title+'</div>'+
+    '<div style="font-size:var(--fxs);color:var(--gray)">'+(s.artist||'')+'</div></div>'+
+    '<span style="font-size:1.3rem">➕</span></div>'
+  ).join('');
+}
+function quickRequestSong(catalogId) {
+  const s = _songCatalog.find(x => x.id === catalogId); if (!s) return;
+  setVal('sr-title', s.title); setVal('sr-artist', s.artist||'');
+  window._srYoutube = s.youtube_url||''; window._srThumb = s.thumbnail_url||'';
+  songTab('request');
+  toast('✅ ເລືອກເພງແລ້ວ ກົດ "ສົ່ງຄຳຂໍ" ເພື່ອຢືນຢັນ', 'success');
+}
+async function submitSongRequest() {
+  const title = getVal('sr-title').trim();
+  if (!title) { toast('ໃສ່ຊື່ເພງກ່ອນ', 'err'); return; }
+  const artist = getVal('sr-artist').trim();
+  const table = getVal('sr-table');
+  const btn = document.querySelector('#song-pane-request .bp');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ ກຳລັງສົ່ງ...'; }
+  const r = await api('requestSong', { song_title: title, artist, table_code: table,
+    youtube_url: window._srYoutube || '', thumbnail_url: window._srThumb || '' });
+  if (btn) { btn.disabled = false; btn.textContent = '🎵 ສົ່ງຄຳຂໍ'; }
+  window._srYoutube=''; window._srThumb='';
+  if (r && r.success) {
+    toast('✅ ສົ່ງຄຳຂໍເພງແລ້ວ!', 'success');
+    setVal('sr-title',''); setVal('sr-artist','');
+    loadSongHistory(); songTab('history');
+  } else toast('❌ ' + (r?r.error:'Error'), 'err');
+}
+async function loadSongHistory() {
+  const r = await api('getSongRequestsPublic', {});
+  const list = (r && r.success) ? r.data : [];
+  const c = document.getElementById('song-history-list'); if (!c) return;
+  if (!list.length) { c.innerHTML = '<div class="es"><div class="ei">🎵</div><h3>ຍັງບໍ່ມີການຂໍເພງ</h3></div>'; return; }
+  const lbl = {pending:'⏳ ລໍຖ້າ',playing:'🎶 ກຳລັງເປີດ',played:'✅ ເປີດແລ້ວ',rejected:'❌ ຍົກເລີກ'};
+  c.innerHTML = list.map(s =>
+    '<div class="song-req-card'+(s.status==='playing'?' playing':'')+'">'+
+    '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center">'+
+    '<div><b>🎵 '+s.song_title+'</b>'+(s.artist?' — '+s.artist:'')+'</div>'+
+    '<span class="bgs" style="background:rgba(184,134,11,.1);color:var(--gold-d)">'+(lbl[s.status]||s.status)+'</span></div>'+
+    '<div style="font-size:var(--fxs);color:var(--gray);margin-top:4px">'+(s.table_code?'🪑 '+s.table_code+' | ':'')+fd(s.requested_at)+'</div>'+
+    '</div>'
+  ).join('');
+}
+
+// ============================================================
+// 🎵 ADMIN: SONG QUEUE MANAGEMENT
+// ============================================================
+async function rSongs() {
+  const r = await api('getSongRequests', {});
+  const list = (r && r.data) || [];
+  const pending = list.filter(s => s.status === 'pending').length;
+  const nd = document.getElementById('sn'); if (nd) nd.style.display = pending>0 ? 'inline-block' : 'none';
+  document.getElementById('ac').innerHTML =
+    '<div class="tb"><div class="tb-t">🎵 ຄິວຂໍເພງ ('+list.length+')</div>'+
+    '<div style="display:flex;gap:8px"><button class="bp" onclick="openSongCatalogAdmin()">🎼 ຈັດການລາຍການເພງ</button></div></div>'+
+    '<div class="dtw"><table class="dt"><thead><tr><th>ໂຕະ</th><th>ເພງ</th><th>ນັກຮ້ອງ</th><th>YouTube</th><th>ສະຖານະ</th><th>ເວລາຂໍ</th><th>Actions</th></tr></thead><tbody>'+
+    list.map(s =>
+      '<tr>'+
+      '<td>'+(s.table_code?'<span style="background:rgba(200,90,26,.1);color:var(--orange);padding:3px 10px;border-radius:50px;font-weight:700">🪑 '+s.table_code+'</span>':'<span style="color:var(--gray)">-</span>')+'</td>'+
+      '<td><b>'+s.song_title+'</b></td>'+
+      '<td>'+(s.artist||'-')+'</td>'+
+      '<td><input class="fi" style="font-size:var(--fxs);padding:5px 8px" value="'+(s.youtube_url||'')+'" placeholder="ວາງລີ້ງ YouTube..." onchange="setSongYoutube(\''+s.id+'\',this.value)"></td>'+
+      '<td><select class="fi" style="width:auto;font-size:var(--fxs);padding:3px 6px" onchange="setSongStatus(\''+s.id+'\',this.value)">'+
+      ['pending','playing','played','rejected'].map(st=>'<option value="'+st+'" '+(s.status===st?'selected':'')+'>'+st+'</option>').join('')+'</select></td>'+
+      '<td style="font-size:var(--fxs)">'+fd(s.requested_at)+'</td>'+
+      '<td><div style="display:flex;gap:5px">'+
+      (s.youtube_url?'<a class="abt be2" href="'+s.youtube_url+'" target="_blank">▶️</a>':'')+
+      '<button class="abt bd" onclick="delSongReq(\''+s.id+'\')">🗑</button></div></td></tr>'
+    ).join('')+'</tbody></table></div>';
+  ADMIN_HTML_CACHE['songs'] = document.getElementById('ac').innerHTML;
+}
+async function setSongStatus(id, status) {
+  const r = await api('updateSongRequestStatus', { id, status });
+  if (r && r.success) { toast('✅ ອັບເດດແລ້ວ','success'); rSongs(); } else toast('❌','err');
+}
+async function setSongYoutube(id, youtube_url) {
+  const r = await api('updateSongRequestStatus', { id, youtube_url });
+  if (r && r.success) toast('✅ ບັນທຶກລີ້ງແລ້ວ','success'); else toast('❌','err');
+}
+async function delSongReq(id) {
+  if (!confirm('ລຶບ?')) return;
+  const r = await api('deleteSongRequest', { id });
+  if (r && r.success) { toast('🗑','info'); rSongs(); } else toast('❌','err');
+}
+async function openSongCatalogAdmin() {
+  const r = await api('getSongCatalog', {});
+  const list = (r && r.data) || [];
+  let body = '<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="bp" onclick="addSongCatalogItem()">➕ ເພີ່ມເພງ</button></div>';
+  body += list.map(s =>
+    '<div style="display:flex;gap:10px;align-items:center;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;margin-bottom:8px">'+
+    '<img src="'+(s.thumbnail_url||'')+'" style="width:50px;height:50px;object-fit:cover;border-radius:8px" onerror="this.style.opacity=0">'+
+    '<div style="flex:1"><b>'+s.title+'</b><div style="font-size:var(--fxs);color:var(--gray)">'+(s.artist||'')+'</div></div>'+
+    '<button class="abt bd" onclick="delSongCatalogItem(\''+s.id+'\')">🗑</button></div>'
+  ).join('') || '<div class="es"><div class="ei">🎼</div><h3>ຍັງບໍ່ມີ</h3></div>';
+  setEl('tblm-title', '🎼 ຈັດການລາຍການເພງ');
+  document.getElementById('tblm-body').innerHTML = body;
+  openModal('tblm');
+}
+async function addSongCatalogItem() {
+  const title = prompt('ຊື່ເພງ:'); if (!title) return;
+  const artist = prompt('ນັກຮ້ອງ:') || '';
+  const youtube = prompt('ລີ້ງ YouTube:') || '';
+  const thumb = prompt('ຮູບໜ້າປົກ (URL, ຖ້າວ່າງຈະໃຊ້ຮູບຈາກ YouTube ອັດຕະໂນມັດ):') || '';
+  const r = await api('addSongCatalog', { title, artist, youtube_url: youtube, thumbnail_url: thumb });
+  if (r && r.success) { toast('✅','success'); openSongCatalogAdmin(); } else toast('❌ '+(r?r.error:'Error'),'err');
+}
+async function delSongCatalogItem(id) {
+  if (!confirm('ລຶບ?')) return;
+  const r = await api('deleteSongCatalog', { id });
+  if (r && r.success) { toast('🗑','info'); openSongCatalogAdmin(); } else toast('❌','err');
+}
 
 // ============================================================
 // ACTIVITY LOGS
