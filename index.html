@@ -2025,7 +2025,7 @@ function openFood(id) {
   const fi=document.getElementById('fmi');
   fi.src=item.image_url||'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400';
   fi.onerror=()=>fi.src='https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400';
-  setEl('fmp',fp(p)+(item.unit?' <span style="font-size:.9rem;color:var(--gray)">/'+item.unit+'</span>':'')); setEl('fmd2',dc||'ອາຫານລົດຊາດດີ');
+  setElHtml('fmp',fp(p)+(item.unit?' <span style="font-size:.9rem;color:var(--gray)">/'+item.unit+'</span>':'')); setEl('fmd2',dc||'ອາຫານລົດຊາດດີ');
   const fo=document.getElementById('fmo');
   if(item.special_price&&parseFloat(item.special_price)>0&&(item.is_promotion===true||item.is_promotion==='TRUE')){fo.textContent=fp(parseFloat(item.price));fo.style.display='block';}else fo.style.display='none';
   const tbnEl=document.getElementById('fmtbn');
@@ -2055,7 +2055,7 @@ function toggleAddon(i, el){
   else { if(idx!==-1) A.curAddons.splice(idx,1); }
   const base=gp(A.curItem);
   const addTot=A.curAddons.reduce((s,a)=>s+(a.price||0),0);
-  setEl('fmp', fp(base+addTot)+(A.curItem.unit?' <span style="font-size:.9rem;color:var(--gray)">/'+A.curItem.unit+'</span>':''));
+  setElHtml('fmp', fp(base+addTot)+(A.curItem.unit?' <span style="font-size:.9rem;color:var(--gray)">/'+A.curItem.unit+'</span>':''));
 }
 
 function qAdd(id){const item=A.menu.find(m=>m.id===id);if(item){addCart(item,1);toast('✅ ເພີ່ມ','success');}}
@@ -2181,6 +2181,15 @@ function clearSlip() {
   document.getElementById('slip-preview-wrap').style.display = 'none';
 }
 
+function cartItemNote(i){
+  const addonPart = (i.addons && i.addons.length)
+    ? i.addons.map(a => a.name + ' (+' + fp(a.price) + ')').join(', ')
+    : '';
+  if (addonPart && i.note) return '✨ ' + addonPart + ' | 📝 ' + i.note;
+  if (addonPart) return '✨ ' + addonPart;
+  return i.note || '';
+}
+
 async function placeOrder() {
   const nm = (document.getElementById('cn').value||'').trim();
   const ph = (document.getElementById('cp').value||'').trim();
@@ -2199,7 +2208,7 @@ async function placeOrder() {
     note: (document.getElementById('cn2').value||''),
     payment_method: A.selPay2||'cash',
     slip_url: '',
-    items: A.cart.map(i=>({menu_id:i.id,menu_name:i.nm,quantity:i.qty,unit_price:i.p,item_note:i.note||''})),
+    items:A.cart.map(i=>({menu_id:i.id,menu_name:i.nm,quantity:i.qty,unit_price:i.p,item_note:cartItemNote(i)})),
     subtotal:t.sub, discount:t.disc, delivery_fee:t.del, tax:t.tax, total:t.tot,
     coupon_code: A.coupon?A.coupon.code:''
   });
@@ -2247,7 +2256,7 @@ async function placeOrderTable(){
     note:'',
     payment_method:'cash',
     slip_url:'',
-    items:A.cart.map(i=>({menu_id:i.id,menu_name:i.nm,quantity:i.qty,unit_price:i.p,item_note:i.note||''})),
+    items:A.cart.map(i=>({menu_id:i.id,menu_name:i.nm,quantity:i.qty,unit_price:i.p,item_note:cartItemNote(i)})),
     subtotal:t.sub,discount:t.disc,delivery_fee:0,tax:t.tax,total:t.tot,
     coupon_code:A.coupon?A.coupon.code:''
   });
@@ -3360,6 +3369,7 @@ async function rLogs(){
 // ============================================================
 function showErr(msg){document.getElementById('ac').innerHTML='<div class="es"><div class="ei">❌</div><h3>'+(msg||'Error')+'</h3><button class="bp" style="margin-top:16px" onclick="aTab(\'dashboard\')">← Dashboard</button></div>';}
 function setEl(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+function setElHtml(id,v){const e=document.getElementById(id);if(e)e.innerHTML=v;}
 function setVal(id,v){const e=document.getElementById(id);if(e)e.value=v;}
 function getVal(id){const e=document.getElementById(id);return e?e.value:'';}
 function fp(n){
