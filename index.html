@@ -682,6 +682,7 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
 
 @media(prefers-reduced-motion:reduce){.li::after,.hero::before,.hero::after,.bp::after,.bco::after{animation:none!important;display:none!important}}
 #ms{background:rgba(255,255,255,.95)}
+
 </style>
 </head>
 <body>
@@ -1087,6 +1088,22 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
   <div class="mod wide" onclick="event.stopPropagation()">
     <div class="mhd"><h3 id="tblm-title">🪑 ໂຕະ Orders</h3><button class="clb" onclick="closeModal('tblm')">✕</button></div>
     <div class="mbd" id="tblm-body"></div>
+  </div>
+</div>
+
+<!-- SONG CATALOG FORM MODAL -->
+<div class="mov" id="scfm">
+  <div class="mod" onclick="event.stopPropagation()">
+    <div class="mhd"><h3 id="scft">➕ ເພີ່ມເພງ</h3><button class="clb" onclick="closeModal('scfm')">✕</button></div>
+    <div class="mbd">
+      <input type="hidden" id="scfid">
+      <div class="fg2"><label class="fl">🎤 ຊື່ເພງ *</label><input class="fi" id="scftitle" placeholder="ຊື່ເພງ..."></div>
+      <div class="fg2"><label class="fl">🎙️ ນັກຮ້ອງ</label><input class="fi" id="scfartist" placeholder="ຊື່ນັກຮ້ອງ"></div>
+      <div class="fg2"><label class="fl">🔗 ລີ້ງ YouTube</label><input class="fi" id="scfyt" placeholder="https://youtube.com/watch?v=..." oninput="scfPrevThumb()"></div>
+      <div class="fg2"><label class="fl">🖼️ ຮູບໜ້າປົກ (ຖ້າວ່າງ ຈະໃຊ້ຮູບຈາກ YouTube ອັດຕະໂນມັດ)</label><input class="fi" id="scfthumb" placeholder="https://..." oninput="scfPrevThumb()"></div>
+      <img id="scfthumbp" src="" style="width:100%;max-width:220px;height:130px;object-fit:cover;border-radius:8px;margin-top:8px;display:none">
+      <button class="bp" style="width:100%;margin-top:var(--smd)" onclick="saveSongCatalogForm()">💾 ບັນທຶກ</button>
+    </div>
   </div>
 </div>
 
@@ -3197,25 +3214,66 @@ async function delSongReq(id) {
 async function openSongCatalogAdmin() {
   const r = await api('getSongCatalog', {});
   const list = (r && r.data) || [];
-  let body = '<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="bp" onclick="addSongCatalogItem()">➕ ເພີ່ມເພງ</button></div>';
+  let body = '<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="bp" onclick="openSongCatalogForm()">➕ ເພີ່ມເພງ</button></div>';
   body += list.map(s =>
     '<div style="display:flex;gap:10px;align-items:center;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;margin-bottom:8px">'+
     '<img src="'+(s.thumbnail_url||'')+'" style="width:50px;height:50px;object-fit:cover;border-radius:8px" onerror="this.style.opacity=0">'+
     '<div style="flex:1"><b>'+s.title+'</b><div style="font-size:var(--fxs);color:var(--gray)">'+(s.artist||'')+'</div></div>'+
+    '<button class="abt be2" onclick=\'openSongCatalogForm("'+s.id+'", '+JSON.stringify(s).replace(/'/g,"&#39;")+')\'>✏️</button>'+
     '<button class="abt bd" onclick="delSongCatalogItem(\''+s.id+'\')">🗑</button></div>'
   ).join('') || '<div class="es"><div class="ei">🎼</div><h3>ຍັງບໍ່ມີ</h3></div>';
   setEl('tblm-title', '🎼 ຈັດການລາຍການເພງ');
   document.getElementById('tblm-body').innerHTML = body;
   openModal('tblm');
 }
-async function addSongCatalogItem() {
-  const title = prompt('ຊື່ເພງ:'); if (!title) return;
-  const artist = prompt('ນັກຮ້ອງ:') || '';
-  const youtube = prompt('ລີ້ງ YouTube:') || '';
-  const thumb = prompt('ຮູບໜ້າປົກ (URL, ຖ້າວ່າງຈະໃຊ້ຮູບຈາກ YouTube ອັດຕະໂນມັດ):') || '';
-  const r = await api('addSongCatalog', { title, artist, youtube_url: youtube, thumbnail_url: thumb });
-  if (r && r.success) { toast('✅','success'); openSongCatalogAdmin(); } else toast('❌ '+(r?r.error:'Error'),'err');
+
+function extractYoutubeThumbClient(url){
+  if(!url) return '';
+  const m=url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return m?'https://img.youtube.com/vi/'+m[1]+'/hqdefault.jpg':'';
 }
+function scfPrevThumb(){
+  const t=getVal('scfthumb')||extractYoutubeThumbClient(getVal('scfyt'));
+  const p=document.getElementById('scfthumbp');
+  if(t){p.src=t;p.style.display='block';}else p.style.display='none';
+}
+function openSongCatalogForm(id=null, item=null){
+  setVal('scfid', id||'');
+  if(item){
+    document.getElementById('scft').textContent='✏️ ແກ້ໄຂເພງ';
+    setVal('scftitle', item.title||'');
+    setVal('scfartist', item.artist||'');
+    setVal('scfyt', item.youtube_url||'');
+    setVal('scfthumb', item.thumbnail_url||'');
+  } else {
+    document.getElementById('scft').textContent='➕ ເພີ່ມເພງ';
+    ['scftitle','scfartist','scfyt','scfthumb'].forEach(f=>setVal(f,''));
+  }
+  scfPrevThumb();
+  openModal('scfm');
+}
+async function saveSongCatalogForm(){
+  const id=getVal('scfid');
+  const title=getVal('scftitle').trim();
+  if(!title){toast('ໃສ່ຊື່ເພງ','err');return;}
+  const data={
+    title,
+    artist:getVal('scfartist').trim(),
+    youtube_url:getVal('scfyt').trim(),
+    thumbnail_url:getVal('scfthumb').trim()
+  };
+  if(id) data.id=id;
+  const btn=document.querySelector('#scfm .bp');
+  if(btn){btn.disabled=true;btn.textContent='⏳ ກຳລັງບັນທຶກ...';}
+  const r=await api(id?'updateSongCatalog':'addSongCatalog', data);
+  if(btn){btn.disabled=false;btn.textContent='💾 ບັນທຶກ';}
+  if(r&&r.success){
+    toast('✅ ບັນທຶກສຳເລັດ','success');
+    closeModal('scfm');
+    openSongCatalogAdmin();
+  } else toast('❌ '+(r?r.error:'Error'),'err');
+}
+
 async function delSongCatalogItem(id) {
   if (!confirm('ລຶບ?')) return;
   const r = await api('deleteSongCatalog', { id });
