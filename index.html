@@ -1251,6 +1251,12 @@ async function pollForNewOrders() {
       A.tables = tblR.data;
     }
 
+    const tablesSig = (tblR.data||[]).map(t => t.id+':'+t.status+':'+(t.note||'')).join('|');
+    if (window._lastTablesSig !== undefined && window._lastTablesSig !== tablesSig) {
+      if (_curAdminTab === 'tables') rTables();
+    }
+    window._lastTablesSig = tablesSig;
+
     // ★ ແຈ້ງເຕືອນ ຂໍເພງໃໝ່
     if (!window._knownSongReqs) window._knownSongReqs = new Set();
     const songR = await api('getSongRequests', {});
@@ -1270,7 +1276,21 @@ async function pollForNewOrders() {
       }
       const pendingSongs = (songR.data||[]).filter(s => s.status === 'pending').length;
       updateSongBadge(pendingSongs);
+      const songsSig = (songR.data||[]).map(s => s.id+':'+s.status).join('|');
+      if (window._lastSongsSig !== undefined && window._lastSongsSig !== songsSig) {
+        if (_curAdminTab === 'songs') rSongs();
+      }
+      window._lastSongsSig = songsSig;
     }
+    
+    // ★ ອັບເດດຕາຕະລາງທັນທີ ສະເພາະເມື່ອມີການປ່ຽນແປງແທ້ໆ
+    const ordersSig = orders.map(o => o.id+':'+o.status+':'+(o.updated_at||'')+':'+(o.payment_status||'')).join('|');
+    if (window._lastOrdersSig !== undefined && window._lastOrdersSig !== ordersSig) {
+      if (_curAdminTab === 'dashboard') rDash();
+      else if (_curAdminTab === 'orders') rOrders();
+      else if (_curAdminTab === 'tables') rTables();
+    }
+    window._lastOrdersSig = ordersSig;
 
     const pending = orders.filter(o => o.status === 'pending').length;
     updateOrderBadge(pending);
@@ -1336,7 +1356,7 @@ function startOrderPolling() {
   _pollTimer = setInterval(() => {
     pollForNewOrders();
     autoSyncAllSlips();
-  }, 15000);
+  }, 8000);
 }
 function stopOrderPolling() {
   if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
@@ -2385,9 +2405,9 @@ function aTab(tab){
     }
     fns[tab]();
 
-    const autoTabs = ['dashboard', 'orders', 'tables', 'finance', 'fin_report'];
+    const autoTabs = ['finance', 'fin_report'];  // ໜ້າອື່ນອັບເດດແບບ real-time ຜ່ານ pollForNewOrders ແລ້ວ
     if (autoTabs.includes(tab)) {
-      _autoRefreshTimer = setInterval(() => fns[tab](), AUTO_REFRESH_INTERVAL);
+      _autoRefreshTimer = setInterval(() => fns[tab](), 60000); // ທຸກ 1 ນາທີພໍ ເປັນ fallback
     }
   }
 }
