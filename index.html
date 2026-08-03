@@ -924,8 +924,9 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
 <!-- 🤖 AUTO DJ — ລອຍຄ້າງໄວ້ ບໍ່ຫາຍເມື່ອປ່ຽນແທັບ Admin -->
 <div id="autodj-float" style="display:none;position:fixed;left:16px;bottom:16px;z-index:4000;
   background:var(--bg2);border:2px solid var(--gold);border-radius:16px;box-shadow:var(--shadow-lg);
-  width:min(280px,90vw);overflow:hidden;font-family:var(--fb)">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;background:var(--grad-gold);cursor:pointer" onclick="autoDJToggleExpand()">
+  width:min(280px,90vw);overflow:hidden;font-family:var(--fb);touch-action:none">
+  <div id="autodj-drag-handle" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;background:var(--grad-gold);cursor:grab;user-select:none" onclick="autoDJHeaderClick(event)">
+    <span style="font-size:.9rem;color:rgba(255,255,255,.7);margin-right:-4px">⠿</span>
     <div style="display:flex;align-items:center;gap:8px;color:#fff">
       <span style="font-size:1.2rem">🤖</span>
       <b style="font-size:var(--fsm)">Auto DJ</b>
@@ -2486,7 +2487,10 @@ function updateAuthUI(){
     if(mlo) mlo.style.display='none';
   }
   const dj = document.getElementById('autodj-float');
-  if (dj) dj.style.display = A.user ? 'block' : 'none';
+  if (dj) {
+    dj.style.display = A.user ? 'block' : 'none';
+    if (A.user && !dj.dataset.dragInit) { dj.dataset.dragInit = '1'; initAutoDJDrag(); }
+  }
 }
 
 // ============================================================
@@ -3527,6 +3531,83 @@ function autoDJToggleExpand(){
   const show = b.style.display === 'none';
   b.style.display = show ? 'block' : 'none';
   a.textContent = show ? '▼' : '▲';
+}
+
+// ★ ຄລິກຫົວແຖບ = toggle ຫຍໍ້/ຂະຫຍາຍ, ແຕ່ຖ້າກຳລັງລາກຢູ່ ບໍ່ໃຫ້ toggle
+let _adjDidDrag = false;
+function autoDJHeaderClick(e){
+  if (_adjDidDrag) { _adjDidDrag = false; return; }
+  autoDJToggleExpand();
+}
+
+// ★ DRAG LOGIC — ລາກ widget ໄປວາງບ່ອນໃດກໍ່ໄດ້ ບໍ່ໃຫ້ບັງແທບເມນູ
+function initAutoDJDrag(){
+  const handle = document.getElementById('autodj-drag-handle');
+  const box = document.getElementById('autodj-float');
+  if (!handle || !box) return;
+
+  let startX=0, startY=0, boxStartLeft=0, boxStartTop=0, dragging=false;
+
+  function toPointer(e){ return e.touches ? e.touches[0] : e; }
+
+  function onDown(e){
+    dragging = true; _adjDidDrag = false;
+    const p = toPointer(e);
+    startX = p.clientX; startY = p.clientY;
+    const rect = box.getBoundingClientRect();
+    boxStartLeft = rect.left; boxStartTop = rect.top;
+    box.style.left = boxStartLeft + 'px';
+    box.style.top = boxStartTop + 'px';
+    box.style.bottom = 'auto';
+    box.style.right = 'auto';
+    handle.style.cursor = 'grabbing';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchmove', onMove, {passive:false});
+    document.addEventListener('touchend', onUp);
+  }
+
+  function onMove(e){
+    if (!dragging) return;
+    e.preventDefault();
+    const p = toPointer(e);
+    const dx = p.clientX - startX, dy = p.clientY - startY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) _adjDidDrag = true;
+    let newLeft = boxStartLeft + dx, newTop = boxStartTop + dy;
+    const maxLeft = window.innerWidth - box.offsetWidth - 6;
+    const maxTop = window.innerHeight - 44 - 6; // ຢ່າງໜ້ອຍໃຫ້ຫົວແຖບເຫັນ
+    newLeft = Math.max(6, Math.min(newLeft, maxLeft));
+    newTop = Math.max(6, Math.min(newTop, maxTop));
+    box.style.left = newLeft + 'px';
+    box.style.top = newTop + 'px';
+  }
+
+  function onUp(){
+    dragging = false;
+    handle.style.cursor = 'grab';
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    document.removeEventListener('touchmove', onMove);
+    document.removeEventListener('touchend', onUp);
+    try {
+      const rect = box.getBoundingClientRect();
+      localStorage.setItem('autodjPos', JSON.stringify({left:rect.left, top:rect.top}));
+    } catch(e) {}
+  }
+
+  handle.addEventListener('mousedown', onDown);
+  handle.addEventListener('touchstart', onDown, {passive:true});
+
+  // ★ ຄືນຄ່າຕຳແໜ່ງເກົ່າ (ຖ້າມີ)
+  try {
+    const saved = JSON.parse(localStorage.getItem('autodjPos')||'null');
+    if (saved) {
+      box.style.left = Math.min(saved.left, window.innerWidth-60) + 'px';
+      box.style.top = Math.min(saved.top, window.innerHeight-60) + 'px';
+      box.style.bottom = 'auto';
+      box.style.right = 'auto';
+    }
+  } catch(e) {}
 }
 
 function loadYTApi(){
