@@ -991,10 +991,8 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
   <div class="mod" onclick="event.stopPropagation()">
     <div class="mhd"><h3>👤 ເຂົ້າສູ່ລະບົບ</h3><button class="clb" onclick="closeModal('lm2')">✕</button></div>
     <div class="mbd">
-      <div class="fg2"><label class="fl">ຊື່ຜູ້ໃຊ້</label><input type="text" class="fi" id="lu" placeholder="ຊື່ຜູ້ໃຊ້ ຫຼື Email" autocomplete="username"></div>
       <div class="fg2"><label class="fl">ລະຫັດຜ່ານ</label><input type="password" class="fi" id="lp" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
       <button class="bp" style="width:100%" onclick="doLogin()">🔑 ເຂົ້າສູ່ລະບົບ</button>
-      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:var(--ssm) var(--smd);margin-top:var(--ssm);font-size:var(--fxs);color:var(--gray);text-align:center">ເຂົ້າໄດ້ສະເພາະ: <b style="color:var(--gold-d)">admin</b> / <b style="color:var(--gold-d)">Manager</b></div>
     </div>
   </div>
 </div>
@@ -2459,13 +2457,12 @@ function openContactModal(){
   openModal('ctm');
 }
 async function doLogin(){
-  const u=(document.getElementById('lu').value||'').trim();
   const p=document.getElementById('lp').value||'';
-  if(!u||!p){toast('ໃສ່ຊື່ ແລະ ລະຫັດ','err');return;}
+  if(!p){toast('ໃສ່ລະຫັດຜ່ານ','err');return;}
   const btn=document.querySelector('#lm2 .bp');
   if(btn){btn.disabled=true;btn.textContent='⏳...';}
   toast('⏳ ກຳລັງເຂົ້າ...','info');
-  const r=await api('login',{username:u,password:p});
+  const r=await api('login',{password:p});
   if(btn){btn.disabled=false;btn.textContent='🔑 ເຂົ້າສູ່ລະບົບ';}
   if(r&&r.success){
     A.token=r.token; A.user=r.user;
