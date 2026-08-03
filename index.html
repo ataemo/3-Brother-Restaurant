@@ -2034,10 +2034,38 @@ function mkCard(item) {
     '<div class="fb3" onclick="event.stopPropagation();toggleFav(\''+item.id+'\',this)">'+(fav?'❤️':'🤍')+'</div></div>'+
     '<div class="fcd"><div class="fcn">'+nm+'</div><div class="fct">'+(dc||'ອາຫານລົດຊາດດີ')+tbn+'</div>'+
     '<div class="fcf"><div>'+(hp?'<div class="po">'+fp(op)+'</div><div class="ps">'+fp(p)+(item.unit?' <span style="font-size:.65rem;color:var(--gray)">/'+item.unit+'</span>':'')+'</div>':'<div class="pr">'+fp(p)+(item.unit?' <span style="font-size:.65rem;color:var(--gray)">/'+item.unit+'</span>':'')+'</div>')+'</div>'+
-    (av?'<button class="ab" onclick="event.stopPropagation();qAdd(\''+item.id+'\')">🛒</button>':'<button class="ab" disabled style="opacity:.4;cursor:not-allowed">ໝົດ</button>')+
+    (av?cartControlHtml(item):'<button class="ab" disabled style="opacity:.4;cursor:not-allowed">ໝົດ</button>')+
     '</div></div></div>';
 }
 function gp(i){const h=(i.is_promotion===true||i.is_promotion==='TRUE')&&i.special_price&&parseFloat(i.special_price)>0;return h?parseFloat(i.special_price):parseFloat(i.price)||0;}
+function cartQtySimple(id){
+  const entry = A.cart.find(c=>c.id===id && !c.note && (!c.addons||c.addons.length===0));
+  return entry ? entry.qty : 0;
+}
+function cartControlHtml(item){
+  const q = cartQtySimple(item.id);
+  if (q > 0) {
+    return '<div class="qc" onclick="event.stopPropagation()">'+
+      '<button class="qb" onclick="cardQtyChange(\''+item.id+'\',-1)">−</button>'+
+      '<span class="qn">'+q+'</span>'+
+      '<button class="qb" onclick="cardQtyChange(\''+item.id+'\',1)">+</button>'+
+      '</div>';
+  }
+  return '<button class="ab" onclick="event.stopPropagation();cardQtyChange(\''+item.id+'\',1)">+</button>';
+}
+function cardQtyChange(id, delta){
+  const item = A.menu.find(m=>m.id===id); if(!item) return;
+  let entry = A.cart.find(c=>c.id===id && !c.note && (!c.addons||c.addons.length===0));
+  if (delta > 0) {
+    if (entry) { entry.qty += 1; saveCart(); updateCartUI(); }
+    else addCart(item, 1);
+  } else if (entry) {
+    entry.qty -= 1;
+    if (entry.qty <= 0) A.cart = A.cart.filter(c=>c!==entry);
+    saveCart(); updateCartUI();
+  }
+  renderMenu();
+}
 function filterCat(id,el){A.curCat=id;document.querySelectorAll('.cc').forEach(c=>c.classList.remove('ac'));if(el)el.classList.add('ac');renderMenu();}
 function handleSearch(q){A.q=q;renderMenu();}
 function sortMenu(v){A.sort=v;renderMenu();}
