@@ -921,6 +921,34 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
   </div>
 </div>
 
+<!-- 🤖 AUTO DJ — ລອຍຄ້າງໄວ້ ບໍ່ຫາຍເມື່ອປ່ຽນແທັບ Admin -->
+<div id="autodj-float" style="display:none;position:fixed;left:16px;bottom:16px;z-index:4000;
+  background:var(--bg2);border:2px solid var(--gold);border-radius:16px;box-shadow:var(--shadow-lg);
+  width:min(280px,90vw);overflow:hidden;font-family:var(--fb)">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;background:var(--grad-gold);cursor:pointer" onclick="autoDJToggleExpand()">
+    <div style="display:flex;align-items:center;gap:8px;color:#fff">
+      <span style="font-size:1.2rem">🤖</span>
+      <b style="font-size:var(--fsm)">Auto DJ</b>
+    </div>
+    <span id="autodj-exp-arr" style="color:#fff">▼</span>
+  </div>
+  <div id="autodj-body" style="padding:12px 14px">
+    <label style="display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;margin-bottom:8px">
+      <span style="font-size:var(--fsm);font-weight:700;color:var(--dark)" id="autodj-status">⭕ ປິດຢູ່</span>
+      <input type="checkbox" id="autodj-toggle" onchange="toggleAutoDJ(this.checked)" style="width:20px;height:20px;accent-color:var(--gold);cursor:pointer">
+    </label>
+    <div id="autodj-nowplaying" style="display:none;align-items:center;gap:8px;background:var(--bg3);border-radius:10px;padding:8px;margin-bottom:8px">
+      <img id="autodj-thumb" src="" style="width:42px;height:42px;border-radius:7px;object-fit:cover;flex-shrink:0">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.62rem;color:var(--gray)">🎶 ກຳລັງຫຼິ້ນ</div>
+        <div id="autodj-title" style="font-size:var(--fxs);font-weight:700;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+      </div>
+      <button class="abt bd" style="font-size:.65rem;padding:4px 8px;flex-shrink:0" onclick="autoDJSkip()">⏭</button>
+    </div>
+    <div id="yt-player-wrap" style="display:none"><div id="yt-player"></div></div>
+  </div>
+</div>
+
 <!-- CART SIDEBAR -->
 <div class="co" id="cov" onclick="toggleCart()"></div>
 <div class="csd" id="csid">
@@ -1350,6 +1378,8 @@ async function pollForNewOrders() {
       else if (_curAdminTab === 'tables') rTables();
     }
     window._lastOrdersSig = ordersSig;
+    
+    if (autoDJEnabled) autoDJCheckNext();
 
     const pending = orders.filter(o => o.status === 'pending').length;
     updateOrderBadge(pending);
@@ -1584,7 +1614,7 @@ window.addEventListener('DOMContentLoaded', function() {
   updateCartUI();
   if (A.token) {
     api('verifyToken', {}, A.token).then(r => {
-      if (r && r.success) { A.user = r.user; updateAuthUI();initNotifications();startOrderPolling(); }
+      if (r && r.success) { A.user = r.user; updateAuthUI(); initNotifications();startOrderPolling();setTimeout(initAutoDJFromStorage, 500); }
       else { A.token = null; A.user = null; try { localStorage.removeItem('at'); localStorage.removeItem('au'); } catch(e) {} }
     }).catch(()=>{});
     api('getInitialData', {}).then(r => {
@@ -2428,6 +2458,8 @@ async function doLogin(){
 }
 function logout(redir=true){
   if(_autoRefreshTimer){ clearInterval(_autoRefreshTimer); _autoRefreshTimer = null; }
+  toggleAutoDJ(false);
+  const cb=document.getElementById('autodj-toggle'); if(cb) cb.checked=false;
   A.token=null;stopOrderPolling();_lastKnownOrderIds = new Set();updateOrderBadge(0); A.user=null;
   try{localStorage.removeItem('at');localStorage.removeItem('au');}catch(e){}
   updateAuthUI(); if(redir) showPage('home'); toast('ອອກຈາກລະບົບ','info');
@@ -2453,6 +2485,8 @@ function updateAuthUI(){
     const mlo=document.getElementById('m-logout');
     if(mlo) mlo.style.display='none';
   }
+  const dj = document.getElementById('autodj-float');
+  if (dj) dj.style.display = A.user ? 'block' : 'none';
 }
 
 // ============================================================
@@ -3476,6 +3510,136 @@ async function delSongCatalogItem(id) {
   if (!confirm('ລຶບ?')) return;
   const r = await api('deleteSongCatalog', { id });
   if (r && r.success) { toast('🗑','info'); openSongCatalogAdmin(); } else toast('❌','err');
+}
+
+// ============================================================
+// 🤖 AUTO DJ — ຫຼິ້ນເພງອັດຕະໂນມັດຕາມຄິວ
+// ============================================================
+let autoDJEnabled = false;
+let ytPlayer = null;
+let ytApiReady = false;
+let autoDJCurrentId = null;
+let autoDJChecking = false;
+
+function autoDJToggleExpand(){
+  const b = document.getElementById('autodj-body');
+  const a = document.getElementById('autodj-exp-arr');
+  const show = b.style.display === 'none';
+  b.style.display = show ? 'block' : 'none';
+  a.textContent = show ? '▼' : '▲';
+}
+
+function loadYTApi(){
+  if (window.YT && window.YT.Player) { ytApiReady = true; return; }
+  if (document.getElementById('yt-iframe-api')) return;
+  const tag = document.createElement('script');
+  tag.id = 'yt-iframe-api';
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+  window.onYouTubeIframeAPIReady = function(){ ytApiReady = true; if (autoDJEnabled) autoDJCheckNext(); };
+}
+
+function toggleAutoDJ(on){
+  autoDJEnabled = on;
+  try{ localStorage.setItem('autoDJ', on ? '1' : '0'); }catch(e){}
+  setEl('autodj-status', on ? '🟢 ເປີດຢູ່ — ກຳລັງລໍຄິວ...' : '⭕ ປິດຢູ່');
+  document.getElementById('yt-player-wrap').style.display = on ? 'block' : 'none';
+  if (on) {
+    loadYTApi();
+    if (ytApiReady) autoDJCheckNext();
+  } else {
+    if (ytPlayer && ytPlayer.pauseVideo) { try{ ytPlayer.pauseVideo(); }catch(e){} }
+    document.getElementById('autodj-nowplaying').style.display = 'none';
+    autoDJCurrentId = null;
+  }
+}
+
+function extractYoutubeIdClient(url){
+  if (!url) return '';
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : '';
+}
+
+async function autoDJCheckNext(){
+  if (!autoDJEnabled || autoDJChecking || !A.user) return;
+  autoDJChecking = true;
+  try {
+    const r = await api('getSongRequests', {});
+    const list = (r && r.data) || [];
+    const playing = list.find(s => s.status === 'playing');
+
+    // ຖ້າກຳລັງຫຼິ້ນເພງດຽວກັບທີ່ພວກເຮົາຄຸມຢູ່ → ບໍ່ຕ້ອງເຮັດຫຍັງ
+    if (playing && playing.id === autoDJCurrentId) { autoDJChecking = false; return; }
+
+    // ຄິວ: pending + ມີລີ້ງ YouTube, ຮຽງເອົາອັນຂໍມາກ່ອນ
+    const queue = list
+      .filter(s => s.status === 'pending' && extractYoutubeIdClient(s.youtube_url))
+      .sort((a,b) => (a.requested_at||'') < (b.requested_at||'') ? -1 : 1);
+
+    if (playing) {
+      // ມີຄົນ mark playing ຄ້າງໄວ້ຈາກບ່ອນອື່ນ (ເຊັ່ນແອັດມິນອື່ນກົດ) → ຫຼິ້ນຕໍ່
+      if (extractYoutubeIdClient(playing.youtube_url)) {
+        autoDJPlaySong(playing);
+      } else {
+        await api('updateSongRequestStatus', { id: playing.id, status: 'played' });
+        autoDJCheckNext();
+      }
+    } else if (queue.length > 0) {
+      const next = queue[0];
+      await api('updateSongRequestStatus', { id: next.id, status: 'playing' });
+      autoDJPlaySong(next);
+    } else {
+      setEl('autodj-status', '🟢 ເປີດຢູ່ — ບໍ່ມີເພງໃນຄິວ');
+      document.getElementById('autodj-nowplaying').style.display = 'none';
+    }
+  } catch(e) {}
+  autoDJChecking = false;
+}
+
+function autoDJPlaySong(song){
+  const vid = extractYoutubeIdClient(song.youtube_url);
+  if (!vid) return;
+  autoDJCurrentId = song.id;
+  document.getElementById('autodj-nowplaying').style.display = 'flex';
+  setEl('autodj-title', song.song_title + (song.artist ? ' — ' + song.artist : ''));
+  document.getElementById('autodj-thumb').src = song.thumbnail_url || '';
+  setEl('autodj-status', '🟢 ກຳລັງຫຼິ້ນ...');
+
+  if (!ytPlayer) {
+    ytPlayer = new YT.Player('yt-player', {
+      height: '160', width: '250', videoId: vid,
+      playerVars: { autoplay: 1, controls: 1, rel: 0 },
+      events: {
+        onReady: e => e.target.playVideo(),
+        onStateChange: onYTStateChange
+      }
+    });
+  } else {
+    ytPlayer.loadVideoById(vid);
+  }
+}
+
+function onYTStateChange(e){
+  if (e.data === YT.PlayerState.ENDED) autoDJSongEnded();
+}
+
+async function autoDJSongEnded(){
+  if (autoDJCurrentId) {
+    await api('updateSongRequestStatus', { id: autoDJCurrentId, status: 'played' });
+    playStatusSound('song');
+    autoDJCurrentId = null;
+  }
+  if (autoDJEnabled) autoDJCheckNext();
+  if (_curAdminTab === 'songs') rSongs();
+}
+
+function autoDJSkip(){ if (autoDJCurrentId) autoDJSongEnded(); }
+
+function initAutoDJFromStorage(){
+  let saved = '0';
+  try { saved = localStorage.getItem('autoDJ') || '0'; } catch(e) {}
+  const cb = document.getElementById('autodj-toggle');
+  if (saved === '1' && cb) { cb.checked = true; toggleAutoDJ(true); }
 }
 
 // ============================================================
