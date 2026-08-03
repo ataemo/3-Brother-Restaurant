@@ -947,6 +947,12 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
       <button class="abt bd" style="font-size:.65rem;padding:4px 8px;flex-shrink:0" onclick="autoDJSkip()">⏭</button>
     </div>
     <div id="yt-player-wrap" style="display:none"><div id="yt-player"></div></div>
+    <div id="autodj-queue-wrap" style="margin-top:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:.68rem;font-weight:700;color:var(--gray)">🎶 ຄິວຕໍ່ໄປ (<span id="autodj-queue-count">0</span>)</span>
+      </div>
+      <div id="autodj-queue-items" style="max-height:160px;overflow-y:auto"></div>
+    </div>
   </div>
 </div>
 
@@ -1364,6 +1370,7 @@ async function pollForNewOrders() {
       }
       const pendingSongs = (songR.data||[]).filter(s => s.status === 'pending').length;
       updateSongBadge(pendingSongs);
+      renderAutoDJQueue(songR.data||[]);
       const songsSig = (songR.data||[]).map(s => s.id+':'+s.status).join('|');
       if (window._lastSongsSig !== undefined && window._lastSongsSig !== songsSig) {
         if (_curAdminTab === 'songs') rSongs();
@@ -3641,37 +3648,71 @@ function extractYoutubeIdClient(url){
   return m ? m[1] : '';
 }
 
+function renderAutoDJQueue(list) {
+  const countEl = document.getElementById('autodj-queue-count');
+  const listEl = document.getElementById('autodj-queue-items');
+  if (!listEl) return;
+  const queue = (list||[])
+    .filter(s => s.status === 'pending' && extractYoutubeIdClient(s.youtube_url))
+    .sort((a,b) => (a.requested_at||'') < (b.requested_at||'') ? -1 : 1);
+  if (countEl) countEl.textContent = queue.length;
+  if (!queue.length) {
+    listEl.innerHTML = '<div style="text-align:center;color:var(--gray);font-size:var(--fxs);padding:10px 0">ບໍ່ມີເພງລໍຄິວ</div>';
+    return;
+  }
+  listEl.innerHTML = queue.map((s,i) =>
+    '<div style="display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--border)">'+
+    '<span style="width:20px;text-align:center;font-size:.7rem;font-weight:800;color:var(--gold-d);flex-shrink:0">'+(i+1)+'</span>'+
+    (s.thumbnail_url ? '<img src="'+s.thumbnail_url+'" style="width:32px;height:32px;object-fit:cover;border-radius:6px;flex-shrink:0" onerror="this.style.display=\'none\'">' : '')+
+    '<div style="flex:1;min-width:0">'+
+    '<div style="font-size:.72rem;font-weight:700;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+s.song_title+'</div>'+
+    '<div style="font-size:.62rem;color:var(--gray)">'+(s.table_code?'🪑 '+s.table_code+' | ':'')+(s.artist||'')+'</div>'+
+    '</div></div>'
+  ).join('');
+}
+
 async function autoDJCheckNext(){
   if (!autoDJEnabled || autoDJChecking || !A.user) return;
   autoDJChecking = true;
   try {
     const r = await api('getSongRequests', {});
     const list = (r && r.data) || [];
+    renderAutoDJQueue(list);
+
     const playing = list.find(s => s.status === 'playing');
 
-    // ຖ້າກຳລັງຫຼິ້ນເພງດຽວກັບທີ່ພວກເຮົາຄຸມຢູ່ → ບໍ່ຕ້ອງເຮັດຫຍັງ
     if (playing && playing.id === autoDJCurrentId) { autoDJChecking = false; return; }
 
-    // ຄິວ: pending + ມີລີ້ງ YouTube, ຮຽງເອົາອັນຂໍມາກ່ອນ
     const queue = list
       .filter(s => s.status === 'pending' && extractYoutubeIdClient(s.youtube_url))
       .sort((a,b) => (a.requested_at||'') < (b.requested_at||'') ? -1 : 1);
 
     if (playing) {
-      // ມີຄົນ mark playing ຄ້າງໄວ້ຈາກບ່ອນອື່ນ (ເຊັ່ນແອັດມິນອື່ນກົດ) → ຫຼິ້ນຕໍ່
       if (extractYoutubeIdClient(playing.youtube_url)) {
         autoDJPlaySong(playing);
       } else {
         await api('updateSongRequestStatus', { id: playing.id, status: 'played' });
+        autoDJChecking = false;
         autoDJCheckNext();
+        return;
       }
     } else if (queue.length > 0) {
       const next = queue[0];
       await api('updateSongRequestStatus', { id: next.id, status: 'playing' });
       autoDJPlaySong(next);
     } else {
-      setEl('autodj-status', '🟢 ເປີດຢູ່ — ບໍ່ມີເພງໃນຄິວ');
-      document.getElementById('autodj-nowplaying').style.display = 'none';
+      // ★ ຄິວໝົດ — ຖ້າມີເພງທີ່ຫຼິ້ນໄປແລ້ວ ໃຫ້ວົນຄິວກັບຄືນອັດຕະໂນມັດ
+      const hasHistory = list.some(s => s.status === 'played' && extractYoutubeIdClient(s.youtube_url));
+      if (hasHistory) {
+        setEl('autodj-status', '🔁 ຄິວໝົດ — ກຳລັງວົນຄິວໃໝ່...');
+        await api('cycleSongQueue', {});
+        autoDJChecking = false;
+        autoDJCheckNext();
+        return;
+      } else {
+        setEl('autodj-status', '🟢 ເປີດຢູ່ — ບໍ່ມີເພງໃນຄິວ');
+        document.getElementById('autodj-nowplaying').style.display = 'none';
+      }
     }
   } catch(e) {}
   autoDJChecking = false;
