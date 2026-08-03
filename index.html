@@ -262,7 +262,7 @@ section{padding:clamp(36px,8vw,64px) 0}
 .cimg{width:clamp(50px,13vw,60px);height:clamp(50px,13vw,60px);border-radius:var(--rs);object-fit:cover;flex-shrink:0;border:1px solid var(--border)}
 .cin{flex:1;min-width:0}
 .cin-n{font-size:var(--fsm);font-weight:600;margin-bottom:3px;color:var(--dark)}
-.cin-p{color:var(--gold);font-weight:700;font-size:var(--fsm)}
+.cin-p{color:var(--cart-price-color,var(--gold));font-weight:700;font-size:var(--fsm)}
 .qc{display:flex;align-items:center;gap:6px}
 .qb{width:clamp(26px,7vw,28px);height:clamp(26px,7vw,28px);border-radius:7px;background:var(--bg3);border:1px solid var(--border);color:var(--dark);cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:all .2s;touch-action:manipulation}
 .qb:hover{background:rgba(184,134,11,.12);border-color:var(--gold)}
@@ -271,11 +271,11 @@ section{padding:clamp(36px,8vw,64px) 0}
 .cpw{display:flex;gap:7px}
 .cpi{flex:1;background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--rs);color:var(--dark);padding:clamp(7px,2vw,9px) clamp(9px,2.5vw,12px);font-family:var(--fb);font-size:var(--fsm);outline:none}
 .cpi:focus{border-color:var(--gold);background:#fff}
-.bcp2{padding:clamp(7px,2vw,9px) clamp(10px,3vw,14px);background:rgba(184,134,11,.08);border:1.5px solid var(--gold);color:var(--gold-d);border-radius:var(--rs);font-family:var(--fb);font-size:var(--fsm);font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
+.bcp2{padding:clamp(7px,2vw,9px) clamp(10px,3vw,14px);background:var(--coupon-btn-bg,var(--gold-d));border:1.5px solid var(--gold);color:var(--coupon-btn-text,#fff);border-radius:var(--rs);font-family:var(--fb);font-size:var(--fsm);font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
 .csum{padding:var(--ssm) clamp(14px,4vw,20px);border-top:1px solid var(--border);background:var(--bg3)}
 .sr{display:flex;justify-content:space-between;font-size:var(--fsm);padding:3px 0;color:var(--gray)}
 .sr.tot{color:var(--dark);font-size:var(--fmd);font-weight:700;padding-top:9px;margin-top:5px;border-top:1.5px solid var(--border)}
-.sr.tot span:last-child{color:var(--gold)}
+.sr.tot span:last-child{color:var(--cart-price-color,var(--gold))}
 .bco{width:100%;padding:clamp(12px,3.5vw,15px);background:linear-gradient(135deg,var(--gold-d),var(--gold-l));color:#fff;border:none;border-radius:var(--r);font-family:var(--fb);font-size:var(--fb2);font-weight:800;cursor:pointer;transition:all .2s;margin-top:var(--ssm);box-shadow:0 5px 20px rgba(184,134,11,.25);touch-action:manipulation}
 
 /* TABLE INFO BANNER in cart */
@@ -624,37 +624,40 @@ nav a.ac,nav a:hover{background:var(--grad-gold)!important;color:#fff!important;
   font-size:1.15rem;
   min-width:28px;
 }
-/* ✨ ໂໝດມືຖື — ປັບແຖວລາຄາ+ປຸ່ມ ໃຫ້ບໍ່ລົ້ນກາດ (ຈັດວາງຊ້ອນກັນແທນວາງຄຽງກັນ) */
+/* ✨ ປຸ່ມ + ລອຍຢູ່ແຈຮູບ (ສະເພາະໂໝດມືຖື) */
+.fc-quickadd{display:none}
+
 @media(max-width:480px){
-  .fcf{
-    flex-direction:column;
-    align-items:stretch;
-    gap:8px;
-    min-height:auto;
+  .fc-quickadd{
+    display:flex;
+    position:absolute;
+    bottom:8px;
+    right:8px;
+    z-index:6;
   }
-  .fcf .ab{
-    width:100%;
+  .fc-quickadd .ab{
+    width:38px;
     height:38px;
     font-size:1.3rem;
+    border-radius:50%;
+  }
+  .fc-quickadd .qc{
+    background:rgba(255,255,255,.92);
+    border:1.5px solid var(--gold);
     border-radius:50px;
+    padding:4px 8px;
+    gap:6px;
   }
-  .fcf .qc{
-    width:100%;
-    justify-content:center;
-    padding:5px 10px;
+  .fc-quickadd .qb{
+    width:26px;
+    height:26px;
+    font-size:1.05rem;
   }
-  .fcf .qb{
-    width:32px;
-    height:32px;
-    font-size:1.1rem;
-  }
-  .fcf .qn{
-    font-size:1rem;
-    min-width:24px;
-  }
+  /* ເຊື່ອງປຸ່ມເກົ່າ (ໃນແຖວລາຄາ) ອອກ ເພາະຍ້າຍໄປໃສ່ຮູບແລ້ວ */
+  .fcf .ab, .fcf .qc{display:none}
 }
 .trk-btn2{background:var(--grad-gold)!important}
-.bcp2{background:linear-gradient(135deg,rgba(201,151,31,.14),rgba(201,151,31,.05))!important}
+.bcp2{background:var(--coupon-btn-bg,var(--gold-d))!important;color:var(--coupon-btn-text,#fff)!important;border-color:transparent!important}
 
 /* ---- HERO: layered gradient + floating glow orbs (signature element) ---- */
 .hero{position:relative}
@@ -1853,6 +1856,9 @@ function applySettings() {
     document.documentElement.style.setProperty('--inc', s.theme_color3);
   }
   if (s.theme_price_color) document.documentElement.style.setProperty('--price', s.theme_price_color);
+  if (s.cart_price_color) document.documentElement.style.setProperty('--cart-price-color', s.cart_price_color);
+  if (s.coupon_btn_bg) document.documentElement.style.setProperty('--coupon-btn-bg', s.coupon_btn_bg);
+  if (s.coupon_btn_text) document.documentElement.style.setProperty('--coupon-btn-text', s.coupon_btn_text);
 
   // ---- ຟອນ ----
   document.body.classList.remove('font-poppins','font-kanit','font-prompt','font-playfair');
@@ -2087,7 +2093,9 @@ function mkCard(item) {
   return '<div class="fc" onclick="openFood(\''+item.id+'\')">'+
     '<div class="fci"><img src="'+img+'" alt="'+nm+'" loading="lazy" onerror="this.src=\'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400\'">'+
     '<div class="fcb">'+(hp?'<span class="bdg bp2">🔥 Sale</span>':'')+(pop?'<span class="bdg bpp">⭐ Hot</span>':'')+((!av)?'<span class="bdg bph">ໝົດ</span>':'')+'</div>'+
-    '<div class="fb3" onclick="event.stopPropagation();toggleFav(\''+item.id+'\',this)">'+(fav?'❤️':'🤍')+'</div></div>'+
+    '<div class="fb3" onclick="event.stopPropagation();toggleFav(\''+item.id+'\',this)">'+(fav?'❤️':'🤍')+'</div>'+
+    '<div class="fc-quickadd" onclick="event.stopPropagation()">'+(av?cartControlHtml(item):'')+'</div>'+
+    '</div>'+
     '<div class="fcd"><div class="fcn">'+nm+'</div><div class="fct">'+(dc||'ອາຫານລົດຊາດດີ')+tbn+'</div>'+
     '<div class="fcf"><div>'+(hp?'<div class="po">'+fp(op)+'</div><div class="ps">'+fp(p)+(item.unit?' <span style="font-size:.65rem;color:var(--gray)">/'+item.unit+'</span>':'')+'</div>':'<div class="pr">'+fp(p)+(item.unit?' <span style="font-size:.65rem;color:var(--gray)">/'+item.unit+'</span>':'')+'</div>')+'</div>'+
     (av?cartControlHtml(item):'<button class="ab" disabled style="opacity:.4;cursor:not-allowed">ໝົດ</button>')+
@@ -3205,6 +3213,9 @@ async function saveSettings(){
     theme_color:getVal('stcolh')||getVal('stcol'),
     theme_color2:getVal('stcol2h')||getVal('stcol2'),
     theme_price_color:getVal('stpriceh')||getVal('stprice'),
+    cart_price_color:getVal('stcartpriceh')||getVal('stcartprice'),
+    coupon_btn_bg:getVal('stcouponbgh')||getVal('stcouponbg'),
+    coupon_btn_text:getVal('stcoupontxth')||getVal('stcoupontxt'),
     theme_font:getVal('stfont')||'playfair',
     theme_radius:getVal('stradius')||'default',
     dark_mode:getVal('stdark')||'FALSE'};
@@ -3243,6 +3254,9 @@ function themeCustomizerHtml(){
     '<p style="font-size:var(--fxs);color:var(--gray);margin-bottom:var(--smd)">ປ່ຽນສີ, ຟອນ, ຄວາມໂຄ້ງ, ໂໝດມືດ ແລະ ໄອຄອນທຸກໜ້າ — ບັນທຶກແລ້ວຈະນຳໃຊ້ທັນທີທົ່ວແອັບ</p>'+
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--smd);margin-bottom:var(--smd)">'+
     colorRow('stcol','🟡 ສີຫຼັກ (ຄຳ)',c1)+colorRow('stcol2','🔴 ສີຮອງ (ແດງລາຍລັກ)',c2)+colorRow('stcol3','🟢 ສີທີສາມ (ຫຍົກ)',c3)+colorRow('stprice','💰 ສີລາຄາ',s.theme_price_color||'#b51100')+
+    colorRow('stcartprice','🛒 ສີລາຄາໃນກະຕ່າ',s.cart_price_color||'#b51100')+
+    colorRow('stcouponbg','🎟️ ສີພື້ນປຸ່ມ Coupon',s.coupon_btn_bg||'#8B6508')+
+    colorRow('stcoupontxt','✏️ ສີໂຕໜັງສືປຸ່ມ Coupon',s.coupon_btn_text||'#ffffff')+
     '</div>'+
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--smd);margin-bottom:var(--smd)">'+
     '<div class="fg2"><label class="fl">✍️ ຟອນຫົວຂໍ້</label><select class="fi" id="stfont">'+
