@@ -1032,6 +1032,16 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
         <img id="sr-thumbp" src="" style="width:100%;max-width:220px;height:120px;object-fit:cover;border-radius:8px;margin-top:8px;display:none">
         </div>
         <div class="fg2"><label class="fl">🪑 ໂຕະ</label><select class="fi" id="sr-table"><option value="">-- ບໍ່ລະບຸໂຕະ --</option></select></div>
+        <div class="fg2">
+          <label class="fl">💰 ໃຫ້ທິບ (ບໍ່ບັງຄັບ) <span style="color:var(--gray-l);font-weight:400">— ຈະລວມເຂົ້າບິນຂອງໂຕະທ່ານທັນທີ</span></label>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px">
+            <button type="button" class="po2" onclick="srSetTip(5000,this)">5,000</button>
+            <button type="button" class="po2" onclick="srSetTip(10000,this)">10,000</button>
+            <button type="button" class="po2" onclick="srSetTip(20000,this)">20,000</button>
+            <button type="button" class="po2" onclick="srSetTip(50000,this)">50,000</button>
+          </div>
+          <input type="number" class="fi" id="sr-tip" placeholder="ຈຳນວນທິບເອງ (ກີບ)" min="0" oninput="srClearTipBtns()">
+        </div>
         <button class="bp" style="width:100%" onclick="submitSongRequest()">🎵 ສົ່ງຄຳຂໍ</button>
       </div>
       <div id="song-pane-list" style="display:none">
@@ -2579,11 +2589,12 @@ function _renderPrintInvoice(o) {
   const dispSub = parseFloat(o.subtotal) > 0 ? parseFloat(o.subtotal) : calcSub;
   const rawDisc = parseFloat(o.discount) || 0;
   const dispDisc = (rawDisc > 0 && rawDisc < dispSub) ? rawDisc : 0;
-  const dispTot = dispSub - dispDisc + (parseFloat(o.delivery_fee)||0) + (parseFloat(o.tax)||0);
+  const dispTot = dispSub - dispDisc + (parseFloat(o.delivery_fee)||0) + (parseFloat(o.tax)||0) + (parseFloat(o.tip)||0);
   const tableInfo = o.table_code ? '<div style="margin-bottom:8px;font-size:.78rem;background:#f5f0e0;padding:6px 10px;border-radius:6px">🪑 ໂຕະ: <b style="color:#B8860B">' + o.table_code + '</b></div>' : '';
   const rows = (o.items||[]).map(i => '<tr><td>' + i.menu_name + (i.item_note?'<br><span style="font-size:.68rem;color:#C85A1A">📝 '+i.item_note+'</span>':'') + '</td><td style="text-align:center">' + i.quantity + '</td><td style="text-align:right">' + fp(i.unit_price) + '</td><td style="text-align:right;font-weight:700">' + fp(i.total_price) + '</td></tr>').join('');
   const dr = dispDisc > 0 ? '<tr><td colspan="3">ສ່ວນຫຼຸດ</td><td style="text-align:right;color:green">-' + fp(dispDisc) + '</td></tr>' : '';
   const dlr = parseFloat(o.delivery_fee) > 0 ? '<tr><td colspan="3">ຄ່າສົ່ງ</td><td style="text-align:right">' + fp(o.delivery_fee) + '</td></tr>' : '';
+  const tipR = parseFloat(o.tip) > 0 ? '<tr><td colspan="3">💰 ທິບ</td><td style="text-align:right;color:#B8860B;font-weight:700">+' + fp(o.tip) + '</td></tr>' : '';
 
   document.getElementById('ic').innerHTML =
     '<div class="il" style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px">' +
@@ -2595,7 +2606,7 @@ function _renderPrintInvoice(o) {
     '<div style="font-size:.78rem;margin-bottom:8px;line-height:1.6">👤 <b>' + o.customer_name + '</b> 📞 ' + o.customer_phone + (o.customer_address ? '<br>📍 ' + o.customer_address : '') + '</div>' +
     '<div style="font-size:.78rem;margin-bottom:8px">💳 ' + o.payment_method + ' | ສະຖານະ: <b style="color:#B8860B">' + o.status + '</b></div>' +
     '<table><thead><tr><th>ລາຍການ</th><th style="text-align:center">ຈຳ</th><th style="text-align:right">ລາຄາ</th><th style="text-align:right">ລວມ</th></tr></thead><tbody>' +
-    rows + dr + dlr +
+    rows + dr + dlr + tipR +
     '<tr style="background:#f5f0e0"><td colspan="3" style="font-weight:800">ລວມທັງໝົດ</td><td style="text-align:right;font-weight:800;color:#B8860B">' + fp(dispTot > 0 ? dispTot : dispSub) + '</td></tr></tbody></table>' +
     (o.note ? '<div style="margin-top:8px;font-size:.75rem;color:#666">📝 ' + o.note + '</div>' : '') +
     ((s.bank_name||s.bank_account) ?
@@ -2778,7 +2789,7 @@ async function viewTableOrders(code){
         '<select class="fi" style="width:auto;font-size:var(--fxs);padding:3px 6px" onchange="chgOrdSt(\''+o.id+'\',this.value)">'+
         ['pending','confirmed','cooking','delivering','completed','cancelled'].map(s=>'<option value="'+s+'" '+(o.status===s?'selected':'')+'>'+s+'</option>').join('')+
         '</select><button class="abt be2" style="padding:3px 8px" onclick="printInvoice(\''+o.id+'\')">🖨</button></div></div>'+
-        '<div style="font-size:var(--fsm)">'+o.customer_name+' | <b>'+fp(o.total)+'</b></div>'+
+        '<div style="font-size:var(--fsm)">'+o.customer_name+' | <b>'+fp(o.total)+'</b>'+(parseFloat(o.tip)>0?' <span style="color:var(--gold-d);font-weight:700">(💰 ທິບ '+fp(o.tip)+')</span>':'')+'</div>'+
         (o.items||[]).map(i=>'<div style="display:flex;justify-content:space-between;font-size:var(--fxs);padding:2px 0;color:var(--gray)"><span>'+i.menu_name+(i.item_note?' <span style="color:var(--orange)">📝 '+i.item_note+'</span>':'')+' x'+i.quantity+'</span><span>'+fp(i.total_price)+'</span></div>').join('')+
         '</div>';
     });
@@ -2818,7 +2829,7 @@ async function rOrders(){
       '<td style="font-size:var(--fmd);font-family:monospace">#'+(o.id||'').slice(0,7)+'</td>'+
       '<td>'+(o.table_code?'<span style="background:rgba(200,90,26,.1);color:var(--orange);padding:5px 12px;border-radius:50px;font-weight:700;font-size:1rem">🪑 '+o.table_code+'</span>':'<span style="color:var(--gray-l);font-size:1.4rem">📦</span>')+'</td>'+
       '<td><b>'+o.customer_name+'</b><br><span style="font-size:var(--fxs);color:var(--gray)">'+o.customer_phone+'</span></td>'+
-      '<td style="color:#b51100;font-weight:700">'+fp(o.total)+'</td>'+
+      '<td style="color:#b51100;font-weight:700">'+fp(o.total)+(parseFloat(o.tip)>0?'<br><span style="font-size:.65rem;color:var(--gold-d);font-weight:700">💰 +'+fp(o.tip)+'</span>':'')+'</td>'+
       '<td onclick="event.stopPropagation()"><select class="fi" style="width:auto;font-size:var(--fxs);padding:3px 6px" onchange="chgOrdSt(\''+o.id+'\',this.value)">'+['pending','confirmed','cooking','delivering','completed','cancelled'].map(s=>'<option value="'+s+'" '+(o.status===s?'selected':'')+'>'+s+'</option>').join('')+'</select></td>'+
       '<td style="font-size:var(--fmd)">'+fd(o.created_at)+'</td>'+
       '<td style="min-width:90px;text-align:center">'+
@@ -2885,7 +2896,8 @@ function _renderOrderDetail(o) {
   const dispSub = parseFloat(o.subtotal) > 0 ? parseFloat(o.subtotal) : calcSub;
   const rawDisc = parseFloat(o.discount) || 0;
   const dispDisc = (rawDisc > 0 && rawDisc < dispSub) ? rawDisc : 0;
-  const dispTot = dispSub - dispDisc + (parseFloat(o.delivery_fee)||0) + (parseFloat(o.tax)||0);
+  const dispTip = parseFloat(o.tip) || 0;
+  const dispTot = dispSub - dispDisc + (parseFloat(o.delivery_fee)||0) + (parseFloat(o.tax)||0) + dispTip;
 
   document.getElementById('odb').innerHTML =
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--smd);margin-bottom:var(--smd)">' +
@@ -2904,6 +2916,7 @@ function _renderOrderDetail(o) {
     '<div style="text-align:right">' +
     (dispDisc > 0 ? '<div class="sr"><span>ສ່ວນຫຼຸດ:</span><span style="color:var(--green)">-' + fp(dispDisc) + '</span></div>' : '') +
     (parseFloat(o.delivery_fee) > 0 ? '<div class="sr"><span>ຄ່າສົ່ງ:</span><span>' + fp(o.delivery_fee) + '</span></div>' : '') +
+    (dispTip > 0 ? '<div class="sr"><span>💰 ທິບ:</span><span style="color:var(--gold-d);font-weight:700">+' + fp(dispTip) + '</span></div>' : '') +
     '<div class="sr tot"><span>ລວມ:</span><span style="color:var(--gold)">' + fp(dispTot > 0 ? dispTot : dispSub) + '</span></div></div>' +
     '<div style="display:flex;gap:8px;margin-top:var(--smd)">' +
     '<button class="bp" onclick="printInvoice(\'' + o.id + '\')">🖨 Print</button>' +
@@ -3375,6 +3388,15 @@ function quickRequestSong(catalogId) {
   songTab('request');
   toast('✅ ເລືອກເພງແລ້ວ ກົດ "ສົ່ງຄຳຂໍ" ເພື່ອຢືນຢັນ', 'success');
 }
+
+function srSetTip(amount, btn){
+  setVal('sr-tip', amount);
+  document.querySelectorAll('#song-pane-request .po2').forEach(b=>b.classList.remove('sel'));
+  if (btn) btn.classList.add('sel');
+}
+function srClearTipBtns(){
+  document.querySelectorAll('#song-pane-request .po2').forEach(b=>b.classList.remove('sel'));
+}
 async function submitSongRequest() {
   const title = getVal('sr-title').trim();
   if (!title) { toast('ໃສ່ຊື່ເພງກ່ອນ', 'err'); return; }
@@ -3382,15 +3404,24 @@ async function submitSongRequest() {
   const table = getVal('sr-table');
   const ytUrl = getVal('sr-youtube').trim();
   const thumb = ytUrl ? extractYoutubeThumbClient(ytUrl) : (window._srThumb || '');
+  const tipAmt = parseFloat(getVal('sr-tip')) || 0;
+  if (tipAmt > 0 && !table) { toast('ຖ້າຈະໃຫ້ທິບ ກະລຸນາເລືອກໂຕະກ່ອນ', 'err'); return; }
   const btn = document.querySelector('#song-pane-request .bp');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ ກຳລັງສົ່ງ...'; }
   const r = await api('requestSong', { song_title: title, artist, table_code: table,
     youtube_url: ytUrl, thumbnail_url: thumb });
+  let tipMsg = '';
+  if (r && r.success && tipAmt > 0) {
+    const tr = await api('giveTip', { table_code: table, amount: tipAmt, note: '🎵 '+title });
+    if (tr && tr.success) tipMsg = ' | 💰 ທິບ '+fp(tipAmt)+' ລວມເຂົ້າບິນແລ້ວ';
+    else tipMsg = ' | ⚠️ ທິບບໍ່ສຳເລັດ: '+(tr?tr.error:'Error');
+  }
   if (btn) { btn.disabled = false; btn.textContent = '🎵 ສົ່ງຄຳຂໍ'; }
   window._srThumb='';
   if (r && r.success) {
-    toast('✅ ສົ່ງຄຳຂໍເພງແລ້ວ!', 'success');
-    setVal('sr-title',''); setVal('sr-artist',''); setVal('sr-youtube','');
+    toast('✅ ສົ່ງຄຳຂໍເພງແລ້ວ!'+tipMsg, 'success');
+    setVal('sr-title',''); setVal('sr-artist',''); setVal('sr-youtube',''); setVal('sr-tip','');
+    srClearTipBtns();
     const p=document.getElementById('sr-thumbp'); if(p) p.style.display='none';
     loadSongHistory(); songTab('history');
   } else toast('❌ ' + (r?r.error:'Error'), 'err');
@@ -3648,11 +3679,13 @@ function extractYoutubeIdClient(url){
   return m ? m[1] : '';
 }
 
+let _lastSongList = [];
 function renderAutoDJQueue(list) {
+  if (list) _lastSongList = list;
   const countEl = document.getElementById('autodj-queue-count');
   const listEl = document.getElementById('autodj-queue-items');
   if (!listEl) return;
-  const queue = (list||[])
+  const queue = (_lastSongList||[])
     .filter(s => s.status === 'pending' && extractYoutubeIdClient(s.youtube_url))
     .sort((a,b) => (a.requested_at||'') < (b.requested_at||'') ? -1 : 1);
   if (countEl) countEl.textContent = queue.length;
@@ -3746,8 +3779,12 @@ function onYTStateChange(e){
 }
 
 async function autoDJSongEnded(){
-  if (autoDJCurrentId) {
-    await api('updateSongRequestStatus', { id: autoDJCurrentId, status: 'played' });
+  const endedId = autoDJCurrentId;
+  document.getElementById('autodj-nowplaying').style.display = 'none';
+  if (endedId) {
+    _lastSongList = _lastSongList.map(s => s.id === endedId ? { ...s, status: 'played' } : s);
+    renderAutoDJQueue(_lastSongList);
+    await api('updateSongRequestStatus', { id: endedId, status: 'played' });
     playStatusSound('song');
     autoDJCurrentId = null;
   }
