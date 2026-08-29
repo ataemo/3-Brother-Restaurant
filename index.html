@@ -2791,7 +2791,10 @@ async function rRiders(){
   window._ridersCache = (r&&r.data)||[];
   const sum=await api('getRiderDeliveries',{date_from:A.dateFilter.from,date_to:A.dateFilter.to});
   const stats=(sum&&sum.data)||[];
+  window._riderStatsCache = stats;
   const totalComm = stats.reduce((s,x)=>s+(parseFloat(x.commission)||0),0);
+  const totalUnpaid = stats.reduce((s,x)=>s+(parseFloat(x.commission_unpaid)||0),0);
+  const totalPaid = stats.reduce((s,x)=>s+(parseFloat(x.commission_paid)||0),0);
   document.getElementById('ac').innerHTML=
     '<div class="tb"><div class="tb-t">🛵 ຈັດການ Rider</div><button class="bp" onclick="openRiderForm()">➕ ເພີ່ມ Rider</button></div>'+
     '<div class="dtw" style="margin-bottom:var(--smd)"><table class="dt"><thead><tr><th>ຊື່</th><th>Username</th><th>ເບີໂທ</th><th>ຄ່າຄອມ/ອອເດີ</th><th>ສະຖານະ</th><th>Actions</th></tr></thead><tbody>'+
@@ -2801,13 +2804,66 @@ async function rRiders(){
       '<td>'+((rd.is_active===true||rd.is_active==='TRUE')?'<span class="bgs s-com">ເປີດໃຊ້ງານ</span>':'<span class="bgs s-can">ປິດໃຊ້ງານ</span>')+'</td>'+
       '<td><div style="display:flex;gap:5px"><button class="abt be2" onclick="openRiderForm(\''+rd.id+'\')">✏️</button><button class="abt bd" onclick="delRider(\''+rd.id+'\')">🗑</button></div></td></tr>'
     ).join('')+'</tbody></table></div>'+
-    '<div class="tb"><div class="tb-t">💰 ສະຫຼຸບຄ່າຄອມມິດຊັ່ນ Rider</div>'+dtfButtonHtml()+'</div>'+
-    '<div class="fkpi-g" style="margin-bottom:var(--smd)"><div class="fkpi nk"><div class="fkpi-l">💰 ຄ່າຄອມທັງໝົດ</div><div class="fkpi-v" style="color:var(--gold-d)">'+fp(totalComm)+'</div></div></div>'+
-    '<div class="dtw"><table class="dt"><thead><tr><th>Rider</th><th>ຈຳນວນອໍເດີສົ່ງແລ້ວ</th><th>ຍອດຂາຍລວມ</th><th>ຄ່າຄອມມິດຊັ່ນ</th></tr></thead><tbody>'+
-    (stats.length? stats.map(s=>'<tr><td><b>'+(s.rider_name||'-')+'</b></td><td>'+s.count+'</td><td>'+fp(s.total)+'</td><td style="color:var(--gold-d);font-weight:700">'+fp(s.commission||0)+'</td></tr>').join('')
-      : '<tr><td colspan="4" style="text-align:center;color:var(--gray);padding:20px">ຍັງບໍ່ມີຂໍ້ມູນ</td></tr>')+
+    '<div class="tb"><div class="tb-t">💰 ສະຫຼຸບຄ່າຄອມມິດຊັ່ນ Rider</div><div style="display:flex;gap:8px;flex-wrap:wrap">'+dtfButtonHtml()+'<button class="abt bg2" onclick="exportRiderCommissionCSV()">📊 Export Excel</button></div></div>'+
+    '<div class="fkpi-g" style="margin-bottom:var(--smd)">'+
+    '<div class="fkpi nk"><div class="fkpi-l">💰 ຄ່າຄອມທັງໝົດ</div><div class="fkpi-v" style="color:var(--gold-d)">'+fp(totalComm)+'</div></div>'+
+    '<div class="fkpi ek"><div class="fkpi-l">🔴 ຍັງບໍ່ຈ່າຍ</div><div class="fkpi-v ev">'+fp(totalUnpaid)+'</div></div>'+
+    '<div class="fkpi ik"><div class="fkpi-l">✅ ຈ່າຍແລ້ວ</div><div class="fkpi-v iv">'+fp(totalPaid)+'</div></div>'+
+    '</div>'+
+    '<div class="dtw"><table class="dt"><thead><tr><th>Rider</th><th>ຈຳນວນອໍເດີສົ່ງແລ້ວ</th><th>ຍອດຂາຍລວມ</th><th>ຄ່າຄອມທັງໝົດ</th><th>ຍັງບໍ່ຈ່າຍ</th><th>ຈ່າຍແລ້ວ</th><th>Actions</th></tr></thead><tbody>'+
+    (stats.length? stats.map(s=>
+      '<tr><td><b>'+(s.rider_name||'-')+'</b></td><td>'+s.count+'</td><td>'+fp(s.total)+'</td>'+
+      '<td style="color:var(--gold-d);font-weight:700">'+fp(s.commission||0)+'</td>'+
+      '<td style="color:var(--red);font-weight:700">'+fp(s.commission_unpaid||0)+'</td>'+
+      '<td style="color:var(--green);font-weight:700">'+fp(s.commission_paid||0)+'</td>'+
+      '<td>'+((s.commission_unpaid||0)>0?'<button class="abt bg2" onclick="payRiderCommission(\''+s.rider_id+'\',\''+(s.rider_name||'').replace(/'/g,"&#39;")+'\','+(s.commission_unpaid||0)+')">✅ ຈ່າຍຄ່າຄອມ</button>':'<span style="color:var(--gray);font-size:var(--fxs)">-</span>')+'</td></tr>'
+    ).join('')
+      : '<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:20px">ຍັງບໍ່ມີຂໍ້ມູນ</td></tr>')+
     '</tbody></table></div>';
   ADMIN_HTML_CACHE['riders'] = document.getElementById('ac').innerHTML;
+}
+
+async function payRiderCommission(riderId, riderName, amount){
+  if(!confirm('ຢືນຢັນຈ່າຍຄ່າຄອມມິດຊັ່ນໃຫ້ '+riderName+' ຈຳນວນ '+fp(amount)+' ?\n(ຊ່ວງວັນທີ: '+A.dateFilter.from+' ~ '+A.dateFilter.to+')')) return;
+  const r = await api('markCommissionPaid', { rider_id: riderId, date_from: A.dateFilter.from, date_to: A.dateFilter.to });
+  if(r && r.success){
+    toast('✅ ຈ່າຍຄ່າຄອມແລ້ວ '+fp(r.total_paid)+' ('+r.count+' ອໍເດີ)','success');
+    rRiders();
+  } else toast('❌ '+(r?r.error:'Error'),'err');
+}
+
+function exportRiderCommissionCSV(){
+  const stats = window._riderStatsCache || [];
+  if(!stats.length){ toast('ບໍ່ມີຂໍ້ມູນໃຫ້ export','err'); return; }
+  const headers = ['Rider','ຈຳນວນອໍເດີ','ຍອດຂາຍລວມ (ກີບ)','ຄ່າຄອມທັງໝົດ (ກີບ)','ຍັງບໍ່ຈ່າຍ (ກີບ)','ຈ່າຍແລ້ວ (ກີບ)'];
+  const rows = stats.map(s=>[
+    (s.rider_name||'-'),
+    s.count,
+    Math.round(s.total||0),
+    Math.round(s.commission||0),
+    Math.round(s.commission_unpaid||0),
+    Math.round(s.commission_paid||0)
+  ]);
+  let csv = '\uFEFF';
+  csv += headers.map(h=>'"'+h+'"').join(',') + '\r\n';
+  rows.forEach(r=>{ csv += r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',') + '\r\n'; });
+  const totalRow = ['ລວມທັງໝົດ','','',
+    Math.round(stats.reduce((s,x)=>s+(x.commission||0),0)),
+    Math.round(stats.reduce((s,x)=>s+(x.commission_unpaid||0),0)),
+    Math.round(stats.reduce((s,x)=>s+(x.commission_paid||0),0))
+  ];
+  csv += totalRow.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',') + '\r\n';
+
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'ຄ່າຄອມມິດຊັ່ນ_'+A.dateFilter.from+'_ຫາ_'+A.dateFilter.to+'.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('✅ Export ສຳເລັດ (ເປີດດ້ວຍ Excel ໄດ້ເລີຍ)','success');
 }
 function openRiderForm(id){
   const rd = id ? (window._ridersCache||[]).find(x=>x.id===id) : null;
