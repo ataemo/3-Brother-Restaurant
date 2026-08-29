@@ -774,6 +774,7 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
     <div class="sb"><span style="color:var(--gray)">🔍</span><input type="text" id="hs2" placeholder="ຄົ້ນຫາ..." oninput="handleSearch(this.value)"></div>
     <div class="cb" onclick="toggleCart()"><span id="ic-cart">🛒</span><div class="cbg" id="cbg">0</div></div>
     <div class="cb" onclick="openSongModal()" title="ຂໍເພງ"><span>🎵</span></div>
+    <div class="cb" onclick="openRiderLoginModal()" title="Rider"><span>🛵</span></div>
     <button class="blg" id="ab" onclick="openLoginModal()" style="display:none"></button>
     <span class="hm" onclick="toggleMM()">☰</span>
   </div>
@@ -786,6 +787,7 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
     <div class="mni" onclick="showPage('home');closeMM()"><span id="ic-nav-home2">🏠</span> ໜ້າຫຼັກ</div>
     <div class="mni" onclick="scrollTo2('ms');closeMM()"><span id="ic-nav-menu2">🍜</span> ເມນູ</div>
     <div class="mni" onclick="scrollTo2('trk-section');closeMM()"><span id="ic-nav-track2">📍</span> ຕິດຕາມ Order</div>
+    <div class="mni" onclick="openRiderLoginModal();closeMM()">🛵 Rider ຈັດສົ່ງ</div>
     <div class="mni" id="mai" onclick="openLoginModal();closeMM()">👤 ເຂົ້າລະບົບ</div>
     <div class="mni" onclick="openContactModal();closeMM()"><span id="ic-nav-contact2">📞</span> ຕິດຕໍ່</div>
     <div class="mni" id="m-logout" onclick="logout();closeMM()" style="display:none;color:var(--red)">🚪 ອອກຈາກລະບົບ</div>
@@ -897,6 +899,7 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
       <div class="ani" onclick="aTab('slides')"><span class="ni" id="ic-a-slides">🖼️</span>Slides</div>
       <div class="ani" onclick="aTab('promotions')"><span class="ni" id="ic-a-promotions">🎉</span>ໂປຣໂມຊັ່ນ</div>
       <div class="ani" onclick="aTab('songs')"><span class="ni" id="ic-a-songs">🎵</span>ຄິວເພງ <span class="nd" id="sn" style="display:none;margin-left:4px"></span></div>
+      <div class="ani" onclick="aTab('riders')"><span class="ni">🛵</span>ຈັດການ Rider</div>
       <div style="padding:clamp(6px,2vw,8px) clamp(14px,4vw,22px);font-size:var(--fxs);color:var(--gray-l);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:8px;border-top:1px solid var(--border)">💹 ການເງິນ</div>
       <div class="ani" onclick="aTab('finance')"><span class="ni" id="ic-a-finance">📒</span>ລາຍຮັບ-ລາຍຈ່າຍ</div>
       <div class="ani" onclick="aTab('fin_report')"><span class="ni" id="ic-a-finreport">📈</span>ລາຍງານການເງິນ</div>
@@ -1052,6 +1055,53 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
   </div>
 </div>
 
+<!-- RIDER LOGIN MODAL -->
+<div class="mov" id="riderlm">
+  <div class="mod" onclick="event.stopPropagation()">
+    <div class="mhd"><h3>🛵 Rider ຈັດສົ່ງ</h3><button class="clb" onclick="closeModal('riderlm')">✕</button></div>
+    <div class="mbd" style="text-align:center">
+      <div style="font-size:3rem;margin-bottom:10px">🛵</div>
+      <div style="font-family:var(--fd);font-size:var(--fxl);font-weight:800;color:var(--dark);margin-bottom:4px">ເຂົ້າສູ່ລະບົບ Rider</div>
+      <div style="font-size:var(--fsm);color:var(--gray);margin-bottom:var(--smd)">ສຳລັບພະນັກງານຈັດສົ່ງ</div>
+      <div class="fg2" style="text-align:left"><label class="fl">ຊື່ຜູ້ໃຊ້ (username)</label><input class="fi" id="rider-lu" placeholder="username"></div>
+      <div class="fg2" style="text-align:left"><label class="fl">ລະຫັດຜ່ານ</label><input type="password" class="fi" id="rider-lp" placeholder="••••••" onkeydown="if(event.key==='Enter')riderLogin()"></div>
+      <button class="bp" style="width:100%" onclick="riderLogin()">🔑 ເຂົ້າສູ່ລະບົບ</button>
+    </div>
+  </div>
+</div>
+
+<!-- RIDER PANEL MODAL -->
+<div class="mov" id="riderpm">
+  <div class="mod wide" onclick="event.stopPropagation()">
+    <div class="mhd"><h3>🛵 Rider ຈັດສົ່ງ</h3><button class="clb" onclick="closeModal('riderpm')">✕</button></div>
+    <div class="mbd">
+      <div style="margin-bottom:var(--smd);font-size:var(--fsm);color:var(--green);font-weight:700">
+        🟢 <span id="rider-name-lbl"></span> — <span onclick="riderLogout()" style="color:var(--red);cursor:pointer;text-decoration:underline">ອອກຈາກລະບົບ</span>
+      </div>
+      <div class="sr-tabs">
+        <div class="sr-tab ac" id="ridertab-search" onclick="riderTab('search')">🔍 ຄົ້ນຫາ</div>
+        <div class="sr-tab" id="ridertab-queue" onclick="riderTab('queue')">📦 ລຳດັບຈັດສົ່ງ <span id="rider-queue-count"></span></div>
+      </div>
+      <div id="rider-pane-search">
+        <div style="display:flex;gap:8px;margin-bottom:var(--smd)">
+          <input class="fi" id="rider-search-inp" placeholder="ໃສ່ 4 ໂຕທ້າຍລະຫັດອໍເດີ (ຫຼືລະຫັດເຕັມ)" maxlength="20" style="text-transform:uppercase" onkeydown="if(event.key==='Enter')riderSearch()" oninput="this.value=this.value.toUpperCase()">
+          <button class="bp" onclick="riderSearch()">🔍</button>
+        </div>
+        <div id="rider-search-results"></div>
+      </div>
+      <div id="rider-pane-queue" style="display:none"><div id="rider-queue-list"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ORDER LOCATION MODAL (ສຳລັບ Admin) -->
+<div class="mov" id="loclm">
+  <div class="mod" onclick="event.stopPropagation()">
+    <div class="mhd"><h3 id="locm-title">📍 ພິກັດຈັດສົ່ງ</h3><button class="clb" onclick="closeModal('loclm')">✕</button></div>
+    <div class="mbd" id="locm-body"></div>
+  </div>
+</div>
+
 <!-- FOOD DETAIL MODAL -->
 <div class="mov" id="fdm">
   <div class="mod wide" onclick="event.stopPropagation()">
@@ -1094,7 +1144,14 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
         <div class="fg2"><label class="fl">ຊື່ລູກຄ້າ *</label><input type="text" class="fi" id="cn" placeholder="ຊື່ ແລະ ນາມສະກຸນ"></div>
         <div class="fg2"><label class="fl">ເບີໂທ *</label><input type="tel" class="fi" id="cp" placeholder="+856 20..."></div>
       </div>
-      <div class="fg2" id="addr-row"><label class="fl">ທີ່ຢູ່ສົ່ງ</label><input type="text" class="fi" id="ca" placeholder="ທີ່ຢູ່ / ຈຸດໝາຍ"></div>
+      <div class="fg2" id="addr-row">
+        <label class="fl">ທີ່ຢູ່ສົ່ງ</label>
+        <input type="text" class="fi" id="ca" placeholder="ທີ່ຢູ່ / ຈຸດໝາຍ">
+        <button type="button" onclick="useCurrentLocation()" id="gps-btn" style="width:100%;margin-top:8px;padding:10px;border-radius:var(--rs);border:1.5px solid var(--gold);background:rgba(184,134,11,.06);color:var(--gold-d);font-family:var(--fb);font-size:var(--fsm);font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+          📍 ໃຊ້ຕຳແໜ່ງປັດຈຸບັນ
+        </button>
+        <div id="gps-status" style="font-size:var(--fxs);margin-top:6px;display:none"></div>
+      </div>
       <div class="fg2"><label class="fl">ໝາຍເຫດ</label><textarea class="fi" id="cn2" placeholder="ຂໍ້ຄວາມເພີ່ມເຕີມ..."></textarea></div>
       <div class="fg2">
         <label class="fl">ຮູບແບບຊຳລະ</label>
@@ -2283,6 +2340,7 @@ function toggleFav(id,btn){
 function openCheckoutModal(){
   if(!A.cart.length){toast('ກະຕ່າວ່າງ!','err');return;}
   toggleCart();
+  resetGpsUI();
   const t=calcTotals();
 
   if(A.selTable){
@@ -2313,6 +2371,58 @@ function openCheckoutModal(){
     A.cart.map(i=>'<div style="display:flex;justify-content:space-between;font-size:var(--fxs);padding:2px 0"><span>'+i.nm+(i.note?' <span style="color:var(--orange)">📝 '+i.note+'</span>':'')+' x'+i.qty+'</span><span>'+fp(i.p*i.qty)+'</span></div>').join('')+
     '<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;font-weight:700;display:flex;justify-content:space-between"><span>ລວມ</span><span style="color:var(--gold)">'+fp(t.tot)+'</span></div>';
   openModal('chkm');
+}
+
+// ============================================================
+// 📍 GPS — ໃຊ້ຕຳແໜ່ງປັດຈຸບັນ (ຕອນ checkout)
+// ============================================================
+A.deliveryGps = null; // { lat, lng }
+
+function useCurrentLocation() {
+  if (!navigator.geolocation) {
+    toast('❌ ບຣາວເຊີນີ້ບໍ່ຮອງຮັບ GPS', 'err');
+    return;
+  }
+  const btn = document.getElementById('gps-btn');
+  const status = document.getElementById('gps-status');
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ ກຳລັງຄົ້ນຫາຕຳແໜ່ງ...'; }
+  if (status) { status.style.display = 'block'; status.style.color = 'var(--gray)'; status.textContent = '⏳ ກະລຸນາອະນຸຍາດການເຂົ້າເຖິງຕຳແໜ່ງ...'; }
+
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      A.deliveryGps = { lat, lng };
+
+      if (btn) { btn.disabled = false; btn.innerHTML = '✅ ໃຊ້ຕຳແໜ່ງປັດຈຸບັນແລ້ວ'; btn.style.background = 'rgba(26,122,74,.10)'; btn.style.borderColor = 'var(--green)'; btn.style.color = 'var(--green)'; }
+      if (status) { status.style.color = 'var(--green)'; status.textContent = '✅ ບັນທຶກຕຳແໜ່ງແລ້ວ (' + lat.toFixed(5) + ', ' + lng.toFixed(5) + ')'; }
+
+      // ພະຍາຍາມແປງເປັນທີ່ຢູ່ອ່ານໄດ້ (reverse geocode) ຜ່ານ Google Maps link — ບໍ່ overwrite ຊ່ອງທີ່ຢູ່ຖ້າມີແລ້ວ
+      const caInput = document.getElementById('ca');
+      if (caInput && !caInput.value.trim()) {
+        caInput.value = '📍 ຕຳແໜ່ງ GPS (' + lat.toFixed(5) + ', ' + lng.toFixed(5) + ')';
+      }
+      toast('✅ ບັນທຶກຕຳແໜ່ງ GPS ແລ້ວ', 'success');
+    },
+    (err) => {
+      if (btn) { btn.disabled = false; btn.innerHTML = '📍 ໃຊ້ຕຳແໜ່ງປັດຈຸບັນ'; }
+      let msg = 'ບໍ່ສາມາດຄົ້ນຫາຕຳແໜ່ງໄດ້';
+      if (err.code === 1) msg = '❌ ກະລຸນາອະນຸຍາດການເຂົ້າເຖິງຕຳແໜ່ງ ໃນການຕັ້ງຄ່າບຣາວເຊີ';
+      else if (err.code === 2) msg = '❌ ບໍ່ພົບສັນຍານ GPS';
+      else if (err.code === 3) msg = '❌ ໝົດເວລາຄົ້ນຫາຕຳແໜ່ງ';
+      if (status) { status.style.color = 'var(--red)'; status.textContent = msg; }
+      toast(msg, 'err');
+    },
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+  );
+}
+
+function resetGpsUI() {
+  A.deliveryGps = null;
+  const btn = document.getElementById('gps-btn');
+  const status = document.getElementById('gps-status');
+  if (btn) { btn.disabled = false; btn.innerHTML = '📍 ໃຊ້ຕຳແໜ່ງປັດຈຸບັນ'; btn.style.background = 'rgba(184,134,11,.06)'; btn.style.borderColor = 'var(--gold)'; btn.style.color = 'var(--gold-d)'; }
+  if (status) { status.style.display = 'none'; status.textContent = ''; }
 }
 
 function selPay(method, el) {
@@ -2372,6 +2482,8 @@ async function placeOrder() {
     customer_name: nm,
     customer_phone: ph||'-',
     customer_address: (document.getElementById('ca').value||''),
+    delivery_lat: A.deliveryGps ? A.deliveryGps.lat : '',
+    delivery_lng: A.deliveryGps ? A.deliveryGps.lng : '',
     note: (document.getElementById('cn2').value||''),
     payment_method: A.selPay2||'cash',
     slip_url: '',
@@ -2397,7 +2509,7 @@ async function placeOrder() {
     await api('uploadSlip', { order_id: orderId, slip_base64: base64, mime_type: file.type, amount: t.tot });
   }
 
-  A.cart=[]; A.coupon=null; saveCart(); updateCartUI(); closeModal('chkm'); clearSlip();
+  A.cart=[]; A.coupon=null; saveCart(); updateCartUI(); closeModal('chkm'); clearSlip(); resetGpsUI();
   const ordCode = (orderId||'').slice(0,7).toUpperCase();
   toast('✅ ສັ່ງສຳເລັດ! #'+ordCode, 'success');
   setTimeout(()=>{
@@ -2508,6 +2620,165 @@ function updateAuthUI(){
 }
 
 // ============================================================
+// 🛵 RIDER SYSTEM
+// ============================================================
+let RD = { token:null, rider:null };
+try { RD.token = localStorage.getItem('rt') || null; } catch(e){}
+try { RD.rider = JSON.parse(localStorage.getItem('ru') || 'null'); } catch(e){}
+
+function openRiderLoginModal(){
+  if (RD.token && RD.rider) { openRiderPanel(); return; }
+  setVal('rider-lu',''); setVal('rider-lp','');
+  openModal('riderlm');
+}
+async function riderLogin(){
+  const u=getVal('rider-lu').trim(), p=getVal('rider-lp');
+  if(!u||!p){toast('ໃສ່ຊື່ ແລະ ລະຫັດຜ່ານ','err');return;}
+  const btn=document.querySelector('#riderlm .bp');
+  if(btn){btn.disabled=true;btn.textContent='⏳...';}
+  const r=await api('riderLogin',{username:u,password:p});
+  if(btn){btn.disabled=false;btn.textContent='🔑 ເຂົ້າສູ່ລະບົບ';}
+  if(r&&r.success){
+    RD.token=r.token; RD.rider=r.rider;
+    try{localStorage.setItem('rt',r.token);localStorage.setItem('ru',JSON.stringify(r.rider));}catch(e){}
+    closeModal('riderlm'); toast('✅ ຍິນດີຕ້ອນຮັບ '+r.rider.name,'success');
+    openRiderPanel();
+  } else toast('❌ '+(r?r.error:'Error'),'err');
+}
+function riderLogout(){
+  RD.token=null; RD.rider=null;
+  try{localStorage.removeItem('rt');localStorage.removeItem('ru');}catch(e){}
+  closeModal('riderpm'); toast('ອອກຈາກລະບົບແລ້ວ','info');
+}
+function openRiderPanel(){
+  setEl('rider-name-lbl', RD.rider ? (RD.rider.name||RD.rider.username) : '');
+  riderTab('search');
+  openModal('riderpm');
+}
+function riderTab(tab){
+  document.getElementById('ridertab-search').classList.toggle('ac',tab==='search');
+  document.getElementById('ridertab-queue').classList.toggle('ac',tab==='queue');
+  document.getElementById('rider-pane-search').style.display = tab==='search'?'block':'none';
+  document.getElementById('rider-pane-queue').style.display = tab==='queue'?'block':'none';
+  if(tab==='queue') riderLoadQueue();
+}
+async function riderSearch(){
+  const code=getVal('rider-search-inp').trim();
+  if(!code){toast('ໃສ່ລະຫັດອໍເດີ','err');return;}
+  const box=document.getElementById('rider-search-results');
+  box.innerHTML='<div style="text-align:center;color:var(--gray);padding:16px">⏳ ກຳລັງຄົ້ນຫາ...</div>';
+  const r=await api('riderSearchOrders',{code},RD.token);
+  if(!r||!r.success){box.innerHTML='<div class="es"><div class="ei">❌</div><h3>'+(r?r.error:'Error')+'</h3></div>';return;}
+  if(!r.data.length){box.innerHTML='<div class="es"><div class="ei">🔍</div><h3>ບໍ່ພົບ Order</h3></div>';return;}
+  box.innerHTML=r.data.map(o=>riderOrderCardHtml(o,false)).join('');
+}
+function riderOrderCardHtml(o, inQueue){
+  const addr = o.customer_address || '-';
+  const payLbl = o.payment_method==='cash'?'ເງິນສົດ':(o.payment_method==='qr'?'ໂອນ QR':'ໂອນ');
+  const q = (o.delivery_lat&&o.delivery_lng) ? (o.delivery_lat+','+o.delivery_lng) : encodeURIComponent(addr);
+  const mapUrl = 'https://www.google.com/maps/search/?api=1&query='+q;
+  const actionBtn = inQueue
+    ? '<button class="bp" style="width:100%;margin-top:8px;background:linear-gradient(135deg,#1A7A4A,#4CAF50)" onclick="riderConfirmDelivered(\''+o.id+'\')">✅ ຢືນຢັນສົ່ງສຳເລັດ</button>'
+    : '<button class="bp" style="width:100%;margin-top:8px" onclick="riderClaimOrder(\''+o.id+'\')">✅ ຢືນຢັນຮັບອໍເດີ</button>';
+  return '<div style="background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--r);padding:var(--smd);margin-bottom:var(--ssm)">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
+    '<b style="font-family:monospace;color:var(--gold-d)">#'+(o.id||'').slice(0,7).toUpperCase()+'</b>'+
+    '<span class="bgs '+sclass(o.status)+'">'+o.status+'</span></div>'+
+    '<div style="font-size:var(--fsm)">👤 <b>'+o.customer_name+'</b> · 📞 '+o.customer_phone+'</div>'+
+    '<div style="font-size:var(--fsm);color:var(--gray)">🏠 '+addr+'</div>'+
+    '<div style="margin-top:6px;font-weight:700;color:var(--gold-d)">💰 '+fp(o.total)+' ('+payLbl+')</div>'+
+    '<a href="'+mapUrl+'" target="_blank" style="display:block;text-align:center;margin-top:8px;padding:10px;border-radius:var(--rs);border:1.5px solid var(--gold);background:rgba(184,134,11,.08);color:var(--gold-d);font-weight:700;text-decoration:none">🗺️ ນຳທາງໄປສົ່ງ</a>'+
+    actionBtn+'</div>';
+}
+async function riderClaimOrder(id){
+  const r=await api('riderClaimOrder',{id},RD.token);
+  if(r&&r.success){toast('✅ ຮັບອໍເດີແລ້ວ','success');riderTab('queue');}
+  else toast('❌ '+(r?r.error:'Error'),'err');
+}
+async function riderLoadQueue(){
+  const box=document.getElementById('rider-queue-list');
+  box.innerHTML='<div style="text-align:center;color:var(--gray);padding:16px">⏳...</div>';
+  const r=await api('riderGetQueue',{},RD.token);
+  if(!r||!r.success){box.innerHTML='<div class="es"><div class="ei">❌</div><h3>Error</h3></div>';return;}
+  document.getElementById('rider-queue-count').textContent = r.data.length ? '('+r.data.length+')' : '';
+  if(!r.data.length){box.innerHTML='<div class="es"><div class="ei">📦</div><h3>ບໍ່ມີອໍເດີໃນຄິວ</h3></div>';return;}
+  box.innerHTML=r.data.map((o,i)=>'<div style="font-size:var(--fxs);color:var(--gold-d);font-weight:700;margin-bottom:4px">ຄິວທີ '+(i+1)+'</div>'+riderOrderCardHtml(o,true)).join('');
+}
+async function riderConfirmDelivered(id){
+  if(!confirm('ຢືນຢັນວ່າສົ່ງອໍເດີນີ້ສຳເລັດແລ້ວ?'))return;
+  const r=await api('riderConfirmDelivered',{id},RD.token);
+  if(r&&r.success){toast('✅ ສົ່ງສຳເລັດ!','success');riderLoadQueue();}
+  else toast('❌ '+(r?r.error:'Error'),'err');
+}
+
+// ============================================================
+// 📍 ADMIN: ເບິ່ງພິກັດຈັດສົ່ງ
+// ============================================================
+async function viewOrderLocation(id) {
+  const o = await getOrderCached(id);
+  if (!o) { toast('❌ ໂຫຼດ Order ບໍ່ໄດ້', 'err'); return; }
+  const addr = o.customer_address || '-';
+  const hasGps = o.delivery_lat && o.delivery_lng;
+  const q = hasGps ? (o.delivery_lat+','+o.delivery_lng) : encodeURIComponent(addr);
+  const mapUrl = 'https://www.google.com/maps/search/?api=1&query=' + q;
+  const embedSrc = 'https://maps.google.com/maps?q=' + q + '&output=embed';
+  setEl('locm-title', '📍 ພິກັດຈັດສົ່ງ — #' + (o.id||'').slice(0,7).toUpperCase());
+  document.getElementById('locm-body').innerHTML =
+    '<iframe src="'+embedSrc+'" style="width:100%;height:260px;border:0;border-radius:12px" loading="lazy"></iframe>'+
+    '<div style="margin-top:var(--smd)">'+
+    '<div class="sr"><span>👤 ລູກຄ້າ</span><span style="font-weight:700">'+o.customer_name+'</span></div>'+
+    '<div class="sr"><span>📞 ເບີໂທ</span><span style="font-weight:700">'+o.customer_phone+'</span></div>'+
+    '<div class="sr"><span>🏠 ທີ່ຢູ່</span><span style="font-weight:700;text-align:right">'+addr+'</span></div>'+
+    (hasGps ? '<div class="sr"><span>🌐 ພິກັດ GPS</span><span style="font-weight:700">'+o.delivery_lat+', '+o.delivery_lng+'</span></div>' : '')+
+    '</div>'+
+    '<a href="'+mapUrl+'" target="_blank" class="bp" style="display:block;text-align:center;margin-top:var(--smd);text-decoration:none">🗺️ ເປີດແຜນທີ່</a>';
+  openModal('loclm');
+}
+
+// ============================================================
+// 🛵 ADMIN: ຈັດການ Rider
+// ============================================================
+async function rRiders(){
+  const r=await api('getRiders',{});
+  window._ridersCache = (r&&r.data)||[];
+  const sum=await api('getRiderDeliveries',{date_from:A.dateFilter.from,date_to:A.dateFilter.to});
+  const stats=(sum&&sum.data)||[];
+  document.getElementById('ac').innerHTML=
+    '<div class="tb"><div class="tb-t">🛵 ຈັດການ Rider</div><button class="bp" onclick="openRiderForm()">➕ ເພີ່ມ Rider</button></div>'+
+    '<div class="dtw" style="margin-bottom:var(--smd)"><table class="dt"><thead><tr><th>ຊື່</th><th>Username</th><th>ເບີໂທ</th><th>ສະຖານະ</th><th>Actions</th></tr></thead><tbody>'+
+    window._ridersCache.map(rd=>
+      '<tr><td><b>'+(rd.name||'')+'</b></td><td>@'+(rd.username||'')+'</td><td>'+(rd.phone||'-')+'</td>'+
+      '<td>'+((rd.is_active===true||rd.is_active==='TRUE')?'<span class="bgs s-com">ເປີດໃຊ້ງານ</span>':'<span class="bgs s-can">ປິດໃຊ້ງານ</span>')+'</td>'+
+      '<td><div style="display:flex;gap:5px"><button class="abt be2" onclick="openRiderForm(\''+rd.id+'\')">✏️</button><button class="abt bd" onclick="delRider(\''+rd.id+'\')">🗑</button></div></td></tr>'
+    ).join('')+'</tbody></table></div>'+
+    '<div class="tb"><div class="tb-t">💰 ສະຫຼຸບຈຳນວນອໍເດີ / ຍອດທີ່ Rider ສົ່ງ</div>'+dtfButtonHtml()+'</div>'+
+    '<div class="dtw"><table class="dt"><thead><tr><th>Rider</th><th>ຈຳນວນອໍເດີ</th><th>ຍອດລວມ</th></tr></thead><tbody>'+
+    (stats.length? stats.map(s=>'<tr><td><b>'+(s.rider_name||'-')+'</b></td><td>'+s.count+'</td><td style="color:var(--gold-d);font-weight:700">'+fp(s.total)+'</td></tr>').join('')
+      : '<tr><td colspan="3" style="text-align:center;color:var(--gray);padding:20px">ຍັງບໍ່ມີຂໍ້ມູນ</td></tr>')+
+    '</tbody></table></div>';
+  ADMIN_HTML_CACHE['riders'] = document.getElementById('ac').innerHTML;
+}
+function openRiderForm(id){
+  const rd = id ? (window._ridersCache||[]).find(x=>x.id===id) : null;
+  const un = prompt('ຊື່ຜູ້ໃຊ້ (username):', rd?rd.username:''); if(un===null) return;
+  const nm = prompt('ຊື່ Rider:', rd?rd.name:un) || un;
+  const ph = prompt('ເບີໂທ:', rd?rd.phone:'') || '';
+  const pw = prompt('ລະຫັດຜ່ານ' + (rd?' (ປ່ອຍວ່າງໄວ້ = ບໍ່ປ່ຽນ)':'') + ':') || '';
+  if(!rd && !pw){ toast('ຕ້ອງໃສ່ລະຫັດຜ່ານສຳລັບ Rider ໃໝ່','err'); return; }
+  const data = rd ? {id:rd.id, username:un, name:nm, phone:ph} : {username:un, name:nm, phone:ph, password:pw};
+  if(rd && pw) data.password = pw;
+  api(rd?'updateRider':'addRider', data).then(r=>{
+    if(r&&r.success){ toast('✅ ບັນທຶກສຳເລັດ','success'); rRiders(); }
+    else toast('❌ '+(r?r.error:'Error'),'err');
+  });
+}
+async function delRider(id){
+  if(!confirm('ລຶບ Rider ນີ້?'))return;
+  const r=await api('deleteRider',{id});
+  if(r&&r.success){toast('🗑','info');rRiders();}else toast('❌','err');
+}
+
+// ============================================================
 // PAGES
 // ============================================================
 function showPage(pg){
@@ -2539,7 +2810,7 @@ function aTab(tab){
     dashboard: rDash, orders: rOrders, tables: rTables, menu: rMenu,
     categories: rCats, slides: rSlides, promotions: rPromos,
     finance: rFinance, fin_report: rFinReport, users: rUsers,
-    settings: rSettings, logs: rLogs, songs: rSongs
+    settings: rSettings, logs: rLogs, songs: rSongs, riders: rRiders
   };
   if(fns[tab]){
     if (ADMIN_HTML_CACHE[tab]) {
@@ -2855,7 +3126,7 @@ async function rOrders(){
              + '</div>'
            : '<button class="abt bpr2" style="font-size:.6rem;padding:3px 8px;white-space:nowrap" onclick="syncSlip(\''+o.id+'\')">🔄 ຊອກ</button>'
           )+'</td>'+
-      '<td><div style="display:flex;gap:5px"><button class="abt be2" onclick="viewOrd(\''+o.id+'\')">👁</button><button class="abt bpr2" onclick="printInvoice(\''+o.id+'\')">🖨</button><button class="abt bd" onclick="delOrd(\''+o.id+'\')">🗑</button></div></td></tr>'
+      '<td><div style="display:flex;gap:5px"><button class="abt be2" onclick="viewOrd(\''+o.id+'\')">👁</button>'+(o.customer_address?'<button class="abt bg2" onclick="viewOrderLocation(\''+o.id+'\')">📍</button>':'')+'<button class="abt bpr2" onclick="printInvoice(\''+o.id+'\')">🖨</button><button class="abt bd" onclick="delOrd(\''+o.id+'\')">🗑</button></div></td></tr>'
     ).join('')+'</tbody></table></div>';
   const nd=document.getElementById('on');
   if(nd) nd.style.display=os.filter(o=>o.status==='pending').length>0?'inline-block':'none';
