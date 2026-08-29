@@ -1082,6 +1082,7 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
         <div class="sr-tab" id="ridertab-avail" onclick="riderTab('avail')">📋 ພ້ອມສົ່ງ <span id="rider-avail-count"></span></div>
         <div class="sr-tab" id="ridertab-search" onclick="riderTab('search')">🔍 ຄົ້ນຫາ</div>
         <div class="sr-tab" id="ridertab-queue" onclick="riderTab('queue')">📦 ລຳດັບຈັດສົ່ງ <span id="rider-queue-count"></span></div>
+        <div class="sr-tab" id="ridertab-comm" onclick="riderTab('comm')">💰 ຄ່າຄອມ</div>
       </div>
       <div id="rider-pane-avail"><div id="rider-avail-list"></div></div>
       <div id="rider-pane-search" style="display:none">
@@ -1092,6 +1093,7 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
         <div id="rider-search-results"></div>
       </div>
       <div id="rider-pane-queue" style="display:none"><div id="rider-queue-list"></div></div>
+      <div id="rider-pane-comm" style="display:none"><div id="rider-comm-body"></div></div>
     </div>
   </div>
 </div>
@@ -2682,11 +2684,46 @@ function riderTab(tab){
   document.getElementById('ridertab-avail').classList.toggle('ac',tab==='avail');
   document.getElementById('ridertab-search').classList.toggle('ac',tab==='search');
   document.getElementById('ridertab-queue').classList.toggle('ac',tab==='queue');
+  document.getElementById('ridertab-comm').classList.toggle('ac',tab==='comm');
   document.getElementById('rider-pane-avail').style.display = tab==='avail'?'block':'none';
   document.getElementById('rider-pane-search').style.display = tab==='search'?'block':'none';
   document.getElementById('rider-pane-queue').style.display = tab==='queue'?'block':'none';
+  document.getElementById('rider-pane-comm').style.display = tab==='comm'?'block':'none';
   if(tab==='queue') riderLoadQueue();
   if(tab==='avail') riderLoadAvailable();
+  if(tab==='comm') riderLoadCommission();
+}
+
+// ★ ໃໝ່: Rider ເບິ່ງສະຫຼຸບຄ່າຄອມມິດຊັ່ນຕົນເອງ
+async function riderLoadCommission(){
+  const box = document.getElementById('rider-comm-body');
+  box.innerHTML = '<div style="text-align:center;color:var(--gray);padding:16px">⏳...</div>';
+  const r = await api('riderGetCommissionSummary', {}, RD.token);
+  if(!r || !r.success){ box.innerHTML = '<div class="es"><div class="ei">❌</div><h3>Error</h3></div>'; return; }
+  const d = r.data;
+  box.innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'+
+    '<div style="background:rgba(184,134,11,.08);border:1.5px solid var(--gold);border-radius:12px;padding:14px;text-align:center">'+
+      '<div style="font-size:.7rem;color:var(--gray);margin-bottom:4px">📦 ຈຳນວນອໍເດີສົ່ງແລ້ວ</div>'+
+      '<div style="font-family:var(--fd);font-size:1.4rem;font-weight:800;color:var(--gold-d)">'+d.count+'</div>'+
+    '</div>'+
+    '<div style="background:rgba(184,134,11,.08);border:1.5px solid var(--gold);border-radius:12px;padding:14px;text-align:center">'+
+      '<div style="font-size:.7rem;color:var(--gray);margin-bottom:4px">💰 ຄ່າຄອມທັງໝົດ</div>'+
+      '<div style="font-family:var(--fd);font-size:1.3rem;font-weight:800;color:var(--gold-d)">'+fp(d.total_commission)+'</div>'+
+    '</div>'+
+    '<div style="background:rgba(192,57,43,.06);border:1.5px solid rgba(192,57,43,.25);border-radius:12px;padding:14px;text-align:center">'+
+      '<div style="font-size:.7rem;color:var(--gray);margin-bottom:4px">🔴 ຍັງບໍ່ໄດ້ຮັບ</div>'+
+      '<div style="font-family:var(--fd);font-size:1.2rem;font-weight:800;color:var(--red)">'+fp(d.unpaid_commission)+'</div>'+
+    '</div>'+
+    '<div style="background:rgba(26,122,74,.06);border:1.5px solid rgba(26,122,74,.25);border-radius:12px;padding:14px;text-align:center">'+
+      '<div style="font-size:.7rem;color:var(--gray);margin-bottom:4px">✅ ໄດ້ຮັບແລ້ວ</div>'+
+      '<div style="font-family:var(--fd);font-size:1.2rem;font-weight:800;color:var(--green)">'+fp(d.paid_commission)+'</div>'+
+    '</div>'+
+    '</div>'+
+    '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;font-size:.8rem;color:var(--gray)">'+
+      '💵 ຍອດຂາຍລວມທີ່ທ່ານສົ່ງ: <b style="color:var(--dark)">'+fp(d.total_sales)+'</b>'+
+    '</div>'+
+    '<div style="font-size:.65rem;color:var(--gray-l);text-align:center;margin-top:10px">📌 ຂໍ້ມູນນີ້ນັບຈາກອໍເດີທັງໝົດທີ່ທ່ານສົ່ງສຳເລັດ</div>';
 }
 
 async function riderLoadAvailable(){
@@ -2700,16 +2737,64 @@ async function riderLoadAvailable(){
 }
 
 let _riderPollTimer = null;
+let _riderKnownAvailIds = null;   // ★ ໃໝ່: ຈື່ລາຍການ id ຂອງ order ພ້ອມສົ່ງ ຄັ້ງກ່ອນ
+let _riderKnownQueueSig = null;   // ★ ໃໝ່: ຈື່ signature ຂອງຄິວທີ່ຮັບໄວ້
+
 function startRiderPoll(){
   stopRiderPoll();
-  _riderPollTimer = setInterval(()=>{
-    const modal = document.getElementById('riderpm');
-    if(!modal || !modal.classList.contains('open')) return;
-    if(document.getElementById('ridertab-avail').classList.contains('ac')) riderLoadAvailable();
-    if(document.getElementById('ridertab-queue').classList.contains('ac')) riderLoadQueue();
-  }, 12000);
+  _riderKnownAvailIds = null;
+  _riderKnownQueueSig = null;
+  _riderPollTimer = setInterval(riderCheckForUpdates, 12000);
 }
 function stopRiderPoll(){ if(_riderPollTimer){clearInterval(_riderPollTimer);_riderPollTimer=null;} }
+
+// ★ ໃໝ່: ກວດແບບເບົາໆ — render ໃໝ່ສະເພາະຕອນຂໍ້ມູນປ່ຽນແທ້ໆ (ບໍ່ໂຫຼດຊ້ຳລ້າໆ)
+async function riderCheckForUpdates(){
+  const modal = document.getElementById('riderpm');
+  if(!modal || !modal.classList.contains('open')) return;
+
+  try {
+    const r = await api('riderListAvailable',{},RD.token);
+    if(r && r.success){
+      const ids = r.data.map(o=>o.id).sort().join(',');
+      const isFirst = (_riderKnownAvailIds === null);
+      const changed = !isFirst && ids !== _riderKnownAvailIds;
+
+      // ອັບເດດຕົວເລກໃນແທັບສະເໝີ (ເບົາ, ບໍ່ກະທົບ UI)
+      document.getElementById('rider-avail-count').textContent = r.data.length ? '('+r.data.length+')' : '';
+
+      if(changed){
+        const newCount = r.data.length - (_riderKnownAvailIds ? _riderKnownAvailIds.split(',').filter(Boolean).length : 0);
+        if(newCount > 0){
+          toast('🛎️ ມີອໍເດີໃໝ່ພ້ອມສົ່ງ! ('+newCount+')', 'success');
+          playStatusSound('confirmed');
+        }
+        if(document.getElementById('ridertab-avail').classList.contains('ac')){
+          document.getElementById('rider-avail-list').innerHTML =
+            r.data.length ? r.data.map(o=>riderOrderCardHtml(o,false)).join('')
+                          : '<div class="es"><div class="ei">📭</div><h3>ບໍ່ມີອໍເດີພ້ອມສົ່ງ</h3></div>';
+        }
+      }
+      _riderKnownAvailIds = ids;
+    }
+  } catch(e) {}
+
+  try {
+    const rq = await api('riderGetQueue',{},RD.token);
+    if(rq && rq.success){
+      const sig = rq.data.map(o=>o.id+':'+o.status).sort().join(',');
+      const isFirst = (_riderKnownQueueSig === null);
+      const changed = !isFirst && sig !== _riderKnownQueueSig;
+
+      document.getElementById('rider-queue-count').textContent = rq.data.length ? '('+rq.data.length+')' : '';
+
+      if(changed && document.getElementById('ridertab-queue').classList.contains('ac')){
+        riderLoadQueue();
+      }
+      _riderKnownQueueSig = sig;
+    }
+  } catch(e) {}
+}
 async function riderSearch(){
   const code=getVal('rider-search-inp').trim();
   if(!code){toast('ໃສ່ລະຫັດອໍເດີ','err');return;}
