@@ -2,7 +2,7 @@
 // treat the site as an installable PWA (shows "Install app" / looks
 // like a real app after Add to Home Screen). No offline caching,
 // so it will never serve stale content.
-const CACHE_NAME = '3ainong-shell-v1';
+const CACHE_NAME = '3ainong-shell-v2';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
