@@ -1079,10 +1079,12 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
         🟢 <span id="rider-name-lbl"></span> — <span onclick="riderLogout()" style="color:var(--red);cursor:pointer;text-decoration:underline">ອອກຈາກລະບົບ</span>
       </div>
       <div class="sr-tabs">
-        <div class="sr-tab ac" id="ridertab-search" onclick="riderTab('search')">🔍 ຄົ້ນຫາ</div>
+        <div class="sr-tab" id="ridertab-avail" onclick="riderTab('avail')">📋 ພ້ອມສົ່ງ <span id="rider-avail-count"></span></div>
+        <div class="sr-tab" id="ridertab-search" onclick="riderTab('search')">🔍 ຄົ້ນຫາ</div>
         <div class="sr-tab" id="ridertab-queue" onclick="riderTab('queue')">📦 ລຳດັບຈັດສົ່ງ <span id="rider-queue-count"></span></div>
       </div>
-      <div id="rider-pane-search">
+      <div id="rider-pane-avail"><div id="rider-avail-list"></div></div>
+      <div id="rider-pane-search" style="display:none">
         <div style="display:flex;gap:8px;margin-bottom:var(--smd)">
           <input class="fi" id="rider-search-inp" placeholder="ໃສ່ 4 ໂຕທ້າຍລະຫັດອໍເດີ (ຫຼືລະຫັດເຕັມ)" maxlength="20" style="text-transform:uppercase" onkeydown="if(event.key==='Enter')riderSearch()" oninput="this.value=this.value.toUpperCase()">
           <button class="bp" onclick="riderSearch()">🔍</button>
@@ -1090,6 +1092,25 @@ body.radius-round{--r:22px;--rs:16px;--rl:32px}
         <div id="rider-search-results"></div>
       </div>
       <div id="rider-pane-queue" style="display:none"><div id="rider-queue-list"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- RIDER FORM MODAL -->
+<div class="mov" id="riderfm">
+  <div class="mod" onclick="event.stopPropagation()">
+    <div class="mhd"><h3 id="riderft">➕ ເພີ່ມ Rider</h3><button class="clb" onclick="closeModal('riderfm')">✕</button></div>
+    <div class="mbd">
+      <input type="hidden" id="rf-id">
+      <div class="fg2"><label class="fl">ຊື່ຜູ້ໃຊ້ (username) *</label><input class="fi" id="rf-username" placeholder="username"></div>
+      <div class="fg2"><label class="fl">ຊື່ Rider *</label><input class="fi" id="rf-name" placeholder="ຊື່ ແລະ ນາມສະກຸນ"></div>
+      <div class="fg2"><label class="fl">ເບີໂທ</label><input class="fi" id="rf-phone" placeholder="020..."></div>
+      <div class="fg2"><label class="fl" id="rf-pass-label">ລະຫັດຜ່ານ *</label><input type="password" class="fi" id="rf-password" placeholder="••••••"></div>
+      <div class="fg2"><label class="fl">💰 ຄ່າຄອມມິດຊັ່ນ / ອອເດີ (ກີບ)</label><input type="number" class="fi" id="rf-commission" placeholder="5000" min="0"></div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:var(--smd)">
+        <input type="checkbox" id="rf-active" checked style="accent-color:var(--gold);width:18px;height:18px"> ເປີດໃຊ້ງານ
+      </label>
+      <button class="bp" style="width:100%" onclick="saveRiderForm()">💾 ບັນທຶກ</button>
     </div>
   </div>
 </div>
@@ -2646,22 +2667,49 @@ async function riderLogin(){
   } else toast('❌ '+(r?r.error:'Error'),'err');
 }
 function riderLogout(){
+  stopRiderPoll();
   RD.token=null; RD.rider=null;
   try{localStorage.removeItem('rt');localStorage.removeItem('ru');}catch(e){}
   closeModal('riderpm'); toast('ອອກຈາກລະບົບແລ້ວ','info');
 }
 function openRiderPanel(){
   setEl('rider-name-lbl', RD.rider ? (RD.rider.name||RD.rider.username) : '');
-  riderTab('search');
+  riderTab('avail');
   openModal('riderpm');
+  startRiderPoll();
 }
 function riderTab(tab){
+  document.getElementById('ridertab-avail').classList.toggle('ac',tab==='avail');
   document.getElementById('ridertab-search').classList.toggle('ac',tab==='search');
   document.getElementById('ridertab-queue').classList.toggle('ac',tab==='queue');
+  document.getElementById('rider-pane-avail').style.display = tab==='avail'?'block':'none';
   document.getElementById('rider-pane-search').style.display = tab==='search'?'block':'none';
   document.getElementById('rider-pane-queue').style.display = tab==='queue'?'block':'none';
   if(tab==='queue') riderLoadQueue();
+  if(tab==='avail') riderLoadAvailable();
 }
+
+async function riderLoadAvailable(){
+  const box=document.getElementById('rider-avail-list');
+  box.innerHTML='<div style="text-align:center;color:var(--gray);padding:16px">⏳...</div>';
+  const r=await api('riderListAvailable',{},RD.token);
+  if(!r||!r.success){box.innerHTML='<div class="es"><div class="ei">❌</div><h3>Error</h3></div>';return;}
+  document.getElementById('rider-avail-count').textContent = r.data.length ? '('+r.data.length+')' : '';
+  if(!r.data.length){box.innerHTML='<div class="es"><div class="ei">📭</div><h3>ບໍ່ມີອໍເດີພ້ອມສົ່ງ</h3></div>';return;}
+  box.innerHTML=r.data.map(o=>riderOrderCardHtml(o,false)).join('');
+}
+
+let _riderPollTimer = null;
+function startRiderPoll(){
+  stopRiderPoll();
+  _riderPollTimer = setInterval(()=>{
+    const modal = document.getElementById('riderpm');
+    if(!modal || !modal.classList.contains('open')) return;
+    if(document.getElementById('ridertab-avail').classList.contains('ac')) riderLoadAvailable();
+    if(document.getElementById('ridertab-queue').classList.contains('ac')) riderLoadQueue();
+  }, 12000);
+}
+function stopRiderPoll(){ if(_riderPollTimer){clearInterval(_riderPollTimer);_riderPollTimer=null;} }
 async function riderSearch(){
   const code=getVal('rider-search-inp').trim();
   if(!code){toast('ໃສ່ລະຫັດອໍເດີ','err');return;}
@@ -2743,34 +2791,58 @@ async function rRiders(){
   window._ridersCache = (r&&r.data)||[];
   const sum=await api('getRiderDeliveries',{date_from:A.dateFilter.from,date_to:A.dateFilter.to});
   const stats=(sum&&sum.data)||[];
+  const totalComm = stats.reduce((s,x)=>s+(parseFloat(x.commission)||0),0);
   document.getElementById('ac').innerHTML=
     '<div class="tb"><div class="tb-t">🛵 ຈັດການ Rider</div><button class="bp" onclick="openRiderForm()">➕ ເພີ່ມ Rider</button></div>'+
-    '<div class="dtw" style="margin-bottom:var(--smd)"><table class="dt"><thead><tr><th>ຊື່</th><th>Username</th><th>ເບີໂທ</th><th>ສະຖານະ</th><th>Actions</th></tr></thead><tbody>'+
+    '<div class="dtw" style="margin-bottom:var(--smd)"><table class="dt"><thead><tr><th>ຊື່</th><th>Username</th><th>ເບີໂທ</th><th>ຄ່າຄອມ/ອອເດີ</th><th>ສະຖານະ</th><th>Actions</th></tr></thead><tbody>'+
     window._ridersCache.map(rd=>
       '<tr><td><b>'+(rd.name||'')+'</b></td><td>@'+(rd.username||'')+'</td><td>'+(rd.phone||'-')+'</td>'+
+      '<td style="color:var(--gold-d);font-weight:700">'+fp(rd.commission_per_order||0)+'</td>'+
       '<td>'+((rd.is_active===true||rd.is_active==='TRUE')?'<span class="bgs s-com">ເປີດໃຊ້ງານ</span>':'<span class="bgs s-can">ປິດໃຊ້ງານ</span>')+'</td>'+
       '<td><div style="display:flex;gap:5px"><button class="abt be2" onclick="openRiderForm(\''+rd.id+'\')">✏️</button><button class="abt bd" onclick="delRider(\''+rd.id+'\')">🗑</button></div></td></tr>'
     ).join('')+'</tbody></table></div>'+
-    '<div class="tb"><div class="tb-t">💰 ສະຫຼຸບຈຳນວນອໍເດີ / ຍອດທີ່ Rider ສົ່ງ</div>'+dtfButtonHtml()+'</div>'+
-    '<div class="dtw"><table class="dt"><thead><tr><th>Rider</th><th>ຈຳນວນອໍເດີ</th><th>ຍອດລວມ</th></tr></thead><tbody>'+
-    (stats.length? stats.map(s=>'<tr><td><b>'+(s.rider_name||'-')+'</b></td><td>'+s.count+'</td><td style="color:var(--gold-d);font-weight:700">'+fp(s.total)+'</td></tr>').join('')
-      : '<tr><td colspan="3" style="text-align:center;color:var(--gray);padding:20px">ຍັງບໍ່ມີຂໍ້ມູນ</td></tr>')+
+    '<div class="tb"><div class="tb-t">💰 ສະຫຼຸບຄ່າຄອມມິດຊັ່ນ Rider</div>'+dtfButtonHtml()+'</div>'+
+    '<div class="fkpi-g" style="margin-bottom:var(--smd)"><div class="fkpi nk"><div class="fkpi-l">💰 ຄ່າຄອມທັງໝົດ</div><div class="fkpi-v" style="color:var(--gold-d)">'+fp(totalComm)+'</div></div></div>'+
+    '<div class="dtw"><table class="dt"><thead><tr><th>Rider</th><th>ຈຳນວນອໍເດີສົ່ງແລ້ວ</th><th>ຍອດຂາຍລວມ</th><th>ຄ່າຄອມມິດຊັ່ນ</th></tr></thead><tbody>'+
+    (stats.length? stats.map(s=>'<tr><td><b>'+(s.rider_name||'-')+'</b></td><td>'+s.count+'</td><td>'+fp(s.total)+'</td><td style="color:var(--gold-d);font-weight:700">'+fp(s.commission||0)+'</td></tr>').join('')
+      : '<tr><td colspan="4" style="text-align:center;color:var(--gray);padding:20px">ຍັງບໍ່ມີຂໍ້ມູນ</td></tr>')+
     '</tbody></table></div>';
   ADMIN_HTML_CACHE['riders'] = document.getElementById('ac').innerHTML;
 }
 function openRiderForm(id){
   const rd = id ? (window._ridersCache||[]).find(x=>x.id===id) : null;
-  const un = prompt('ຊື່ຜູ້ໃຊ້ (username):', rd?rd.username:''); if(un===null) return;
-  const nm = prompt('ຊື່ Rider:', rd?rd.name:un) || un;
-  const ph = prompt('ເບີໂທ:', rd?rd.phone:'') || '';
-  const pw = prompt('ລະຫັດຜ່ານ' + (rd?' (ປ່ອຍວ່າງໄວ້ = ບໍ່ປ່ຽນ)':'') + ':') || '';
-  if(!rd && !pw){ toast('ຕ້ອງໃສ່ລະຫັດຜ່ານສຳລັບ Rider ໃໝ່','err'); return; }
-  const data = rd ? {id:rd.id, username:un, name:nm, phone:ph} : {username:un, name:nm, phone:ph, password:pw};
-  if(rd && pw) data.password = pw;
-  api(rd?'updateRider':'addRider', data).then(r=>{
-    if(r&&r.success){ toast('✅ ບັນທຶກສຳເລັດ','success'); rRiders(); }
-    else toast('❌ '+(r?r.error:'Error'),'err');
-  });
+  setVal('rf-id', id||'');
+  setVal('rf-username', rd?rd.username:'');
+  setVal('rf-name', rd?rd.name:'');
+  setVal('rf-phone', rd?rd.phone:'');
+  setVal('rf-password','');
+  setVal('rf-commission', rd?(rd.commission_per_order||0):5000);
+  document.getElementById('rf-active').checked = !rd || rd.is_active===true || rd.is_active==='TRUE';
+  document.getElementById('rf-pass-label').textContent = rd ? 'ລະຫັດຜ່ານໃໝ່ (ປ່ອຍວ່າງ = ບໍ່ປ່ຽນ)' : 'ລະຫັດຜ່ານ *';
+  document.getElementById('riderft').textContent = rd ? '✏️ ແກ້ໄຂ Rider' : '➕ ເພີ່ມ Rider';
+  openModal('riderfm');
+}
+
+async function saveRiderForm(){
+  const id = getVal('rf-id');
+  const un = getVal('rf-username').trim();
+  const nm = getVal('rf-name').trim() || un;
+  const ph = getVal('rf-phone').trim();
+  const pw = getVal('rf-password');
+  const commission = parseFloat(getVal('rf-commission')) || 0;
+  const active = document.getElementById('rf-active').checked;
+  if (!un) { toast('ໃສ່ຊື່ຜູ້ໃຊ້','err'); return; }
+  if (!id && !pw) { toast('ຕ້ອງໃສ່ລະຫັດຜ່ານສຳລັບ Rider ໃໝ່','err'); return; }
+  const data = id
+    ? { id, username:un, name:nm, phone:ph, is_active:active, commission_per_order:commission }
+    : { username:un, name:nm, phone:ph, password:pw, is_active:active, commission_per_order:commission };
+  if (id && pw) data.password = pw;
+  const btn = document.querySelector('#riderfm .bp');
+  if(btn){btn.disabled=true;btn.textContent='⏳ ກຳລັງບັນທຶກ...';}
+  const r = await api(id?'updateRider':'addRider', data);
+  if(btn){btn.disabled=false;btn.textContent='💾 ບັນທຶກ';}
+  if (r && r.success) { toast('✅ ບັນທຶກສຳເລັດ','success'); closeModal('riderfm'); rRiders(); }
+  else toast('❌ '+(r?r.error:'Error'),'err');
 }
 async function delRider(id){
   if(!confirm('ລຶບ Rider ນີ້?'))return;
