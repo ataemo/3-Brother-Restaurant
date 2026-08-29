@@ -1614,7 +1614,7 @@ function applyCustomDateFilter(){
 }
 function refreshCurrentTab(){
   delete ADMIN_HTML_CACHE[_curAdminTab];
-  const fns={dashboard:rDash,orders:rOrders,tables:rTables,menu:rMenu,categories:rCats,slides:rSlides,promotions:rPromos,finance:rFinance,fin_report:rFinReport,users:rUsers,settings:rSettings,logs:rLogs};
+  const fns={dashboard:rDash,orders:rOrders,tables:rTables,menu:rMenu,categories:rCats,slides:rSlides,promotions:rPromos,finance:rFinance,fin_report:rFinReport,users:rUsers,settings:rSettings,logs:rLogs,riders:rRiders,songs:rSongs};
   if(fns[_curAdminTab]) fns[_curAdminTab]();
 }
 function dtfButtonHtml(){
@@ -2810,14 +2810,19 @@ async function rRiders(){
     '<div class="fkpi ek"><div class="fkpi-l">🔴 ຍັງບໍ່ຈ່າຍ</div><div class="fkpi-v ev">'+fp(totalUnpaid)+'</div></div>'+
     '<div class="fkpi ik"><div class="fkpi-l">✅ ຈ່າຍແລ້ວ</div><div class="fkpi-v iv">'+fp(totalPaid)+'</div></div>'+
     '</div>'+
-    '<div class="dtw"><table class="dt"><thead><tr><th>Rider</th><th>ຈຳນວນອໍເດີສົ່ງແລ້ວ</th><th>ຍອດຂາຍລວມ</th><th>ຄ່າຄອມທັງໝົດ</th><th>ຍັງບໍ່ຈ່າຍ</th><th>ຈ່າຍແລ້ວ</th><th>Actions</th></tr></thead><tbody>'+
-    (stats.length? stats.map(s=>
-      '<tr><td><b>'+(s.rider_name||'-')+'</b></td><td>'+s.count+'</td><td>'+fp(s.total)+'</td>'+
-      '<td style="color:var(--gold-d);font-weight:700">'+fp(s.commission||0)+'</td>'+
-      '<td style="color:var(--red);font-weight:700">'+fp(s.commission_unpaid||0)+'</td>'+
-      '<td style="color:var(--green);font-weight:700">'+fp(s.commission_paid||0)+'</td>'+
-      '<td>'+((s.commission_unpaid||0)>0?'<button class="abt bg2" onclick="payRiderCommission(\''+s.rider_id+'\',\''+(s.rider_name||'').replace(/'/g,"&#39;")+'\','+(s.commission_unpaid||0)+')">✅ ຈ່າຍຄ່າຄອມ</button>':'<span style="color:var(--gray);font-size:var(--fxs)">-</span>')+'</td></tr>'
-    ).join('')
+    '<div class="dtw"><table class="dt"><thead><tr><th>Rider</th><th>ຊ່ວງວັນທີ</th><th>ຈຳນວນອໍເດີສົ່ງແລ້ວ</th><th>ຍອດຂາຍລວມ</th><th>ຄ່າຄອມທັງໝົດ</th><th>ສະຖານະ</th><th>Actions</th></tr></thead><tbody>'+
+    (stats.length? stats.map(s=>{
+      const unpaid=s.commission_unpaid||0, paid=s.commission_paid||0;
+      const statusBadge = unpaid>0
+        ? '<span class="bgs s-can" style="cursor:pointer" title="ຄິກເພື່ອຈ່າຍທັງໝົດ" onclick="payRiderCommission(\''+s.rider_id+'\',\''+(s.rider_name||'').replace(/'/g,"&#39;")+'\','+unpaid+')">🔴 ຍັງບໍ່ຈ່າຍ ('+fp(unpaid)+')</span>'
+        : (paid>0 ? '<span class="bgs s-com">✅ ຈ່າຍໝົດແລ້ວ</span>' : '<span style="color:var(--gray);font-size:var(--fxs)">-</span>');
+      return '<tr><td><b>'+(s.rider_name||'-')+'</b></td>'+
+        '<td style="font-size:var(--fxs);white-space:nowrap">'+A.dateFilter.from+' <br>~ '+A.dateFilter.to+'</td>'+
+        '<td>'+s.count+'</td><td>'+fp(s.total)+'</td>'+
+        '<td style="color:var(--gold-d);font-weight:700">'+fp(s.commission||0)+'</td>'+
+        '<td>'+statusBadge+'</td>'+
+        '<td><button class="abt be2" onclick="viewRiderOrderDetail(\''+s.rider_id+'\',\''+(s.rider_name||'').replace(/'/g,"&#39;")+'\')">👁 ລາຍລະອຽດ / ແກ້ໄຂ</button></td></tr>';
+    }).join('')
       : '<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:20px">ຍັງບໍ່ມີຂໍ້ມູນ</td></tr>')+
     '</tbody></table></div>';
   ADMIN_HTML_CACHE['riders'] = document.getElementById('ac').innerHTML;
@@ -2830,6 +2835,51 @@ async function payRiderCommission(riderId, riderName, amount){
     toast('✅ ຈ່າຍຄ່າຄອມແລ້ວ '+fp(r.total_paid)+' ('+r.count+' ອໍເດີ)','success');
     rRiders();
   } else toast('❌ '+(r?r.error:'Error'),'err');
+}
+
+async function viewRiderOrderDetail(riderId, riderName){
+  toast('⏳ ກຳລັງໂຫຼດລາຍລະອຽດ...', 'info');
+  const r = await api('getOrders', {});
+  const all = (r && r.data) || [];
+  const list = all.filter(o =>
+    o.rider_id === riderId &&
+    o.status === 'completed' &&
+    safeDateStr(o.delivered_at || o.updated_at) >= A.dateFilter.from &&
+    safeDateStr(o.delivered_at || o.updated_at) <= A.dateFilter.to
+  ).sort((a,b) => (a.delivered_at||a.updated_at||'') < (b.delivered_at||b.updated_at||'') ? 1 : -1);
+
+  setEl('tblm-title', '🛵 ລາຍລະອຽດການສົ່ງ — ' + riderName);
+  if (!list.length) {
+    document.getElementById('tblm-body').innerHTML = '<div class="es"><div class="ei">📭</div><h3>ບໍ່ພົບຂໍ້ມູນໃນຊ່ວງວັນທີນີ້</h3></div>';
+    openModal('tblm'); return;
+  }
+  document.getElementById('tblm-body').innerHTML =
+    '<div class="dtw"><table class="dt"><thead><tr><th>Order</th><th>ວັນທີສົ່ງ</th><th>ຍອດ</th><th>ຄ່າຄອມ</th><th>ສະຖານະຈ່າຍ</th><th>Actions</th></tr></thead><tbody>' +
+    list.map(o => {
+      const paid = (o.commission_paid===true || o.commission_paid==='TRUE');
+      return '<tr>' +
+        '<td style="font-family:monospace">#' + (o.id||'').slice(0,7).toUpperCase() + '</td>' +
+        '<td style="font-size:var(--fxs)">' + fd(o.delivered_at||o.updated_at) + '</td>' +
+        '<td style="font-weight:700;color:#b51100">' + fp(o.total) + '</td>' +
+        '<td style="font-weight:700;color:var(--gold-d)">' + fp(o.rider_commission||0) + '</td>' +
+        '<td>' + (paid ? '<span class="bgs s-com">✅ ຈ່າຍແລ້ວ</span>' : '<span class="bgs s-can">🔴 ຍັງບໍ່ຈ່າຍ</span>') + '</td>' +
+        '<td><div style="display:flex;gap:5px">' +
+        '<button class="abt '+(paid?'bd':'bg2')+'" onclick="toggleOrderCommission(\''+o.id+'\',\''+riderId+'\',\''+riderName.replace(/'/g,"&#39;")+'\')">'+(paid?'↩️ ຍົກເລີກ':'✅ ຈ່າຍແລ້ວ')+'</button>' +
+        '<button class="abt be2" onclick="viewOrd(\'' + o.id + '\')">👁 ເບິ່ງ</button>' +
+        '<button class="abt bpr2" onclick="printInvoice(\'' + o.id + '\')">🖨</button>' +
+        '</div></td></tr>';
+    }).join('') +
+    '</tbody></table></div>';
+  openModal('tblm');
+}
+
+async function toggleOrderCommission(orderId, riderId, riderName){
+  const r = await api('toggleOrderCommissionPaid', { order_id: orderId });
+  if (r && r.success) {
+    toast(r.paid ? '✅ ໝາຍວ່າຈ່າຍແລ້ວ' : '↩️ ຍົກເລີກສະຖານະຈ່າຍ', 'success');
+    viewRiderOrderDetail(riderId, riderName);
+    rRiders();
+  } else toast('❌ ' + (r ? r.error : 'Error'), 'err');
 }
 
 function exportRiderCommissionCSV(){
