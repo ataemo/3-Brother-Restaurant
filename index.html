@@ -2877,18 +2877,30 @@ async function rRiders(){
   const sum=await api('getRiderDeliveries',{date_from:A.dateFilter.from,date_to:A.dateFilter.to});
   const stats=(sum&&sum.data)||[];
   window._riderStatsCache = stats;
+  const allOrdRes = await api('getOrders',{});
+  const allOrdersForRiders = (allOrdRes&&allOrdRes.data)||[];
+  const lastByRider = {};
+  allOrdersForRiders.filter(o=>o.rider_id).forEach(o=>{
+    const ts = o.updated_at||o.created_at||'';
+    if(!lastByRider[o.rider_id] || ts > lastByRider[o.rider_id].ts) lastByRider[o.rider_id] = {ts, order:o};
+  });
   const totalComm = stats.reduce((s,x)=>s+(parseFloat(x.commission)||0),0);
   const totalUnpaid = stats.reduce((s,x)=>s+(parseFloat(x.commission_unpaid)||0),0);
   const totalPaid = stats.reduce((s,x)=>s+(parseFloat(x.commission_paid)||0),0);
   document.getElementById('ac').innerHTML=
     '<div class="tb"><div class="tb-t">🛵 ຈັດການ Rider</div><button class="bp" onclick="openRiderForm()">➕ ເພີ່ມ Rider</button></div>'+
-    '<div class="dtw" style="margin-bottom:var(--smd)"><table class="dt"><thead><tr><th>ຊື່</th><th>Username</th><th>ເບີໂທ</th><th>ຄ່າຄອມ/ອອເດີ</th><th>ສະຖານະ</th><th>Actions</th></tr></thead><tbody>'+
-    window._ridersCache.map(rd=>
-      '<tr><td><b>'+(rd.name||'')+'</b></td><td>@'+(rd.username||'')+'</td><td>'+(rd.phone||'-')+'</td>'+
+    '<div class="dtw" style="margin-bottom:var(--smd)"><table class="dt"><thead><tr><th>ຊື່</th><th>Username</th><th>ເບີໂທ</th><th>ຄ່າຄອມ/ອອເດີ</th><th>ອໍເດີ້ລ່າສຸດທີ່ຮັບ</th><th>ສະຖານະ</th><th>Actions</th></tr></thead><tbody>'+
+    window._ridersCache.map(rd=>{
+      const last = lastByRider[rd.id];
+      const lastHtml = last
+        ? '<div style="font-size:var(--fxs)"><b style="font-family:monospace;color:var(--gold-d)">#'+(last.order.id||'').slice(0,7).toUpperCase()+'</b><br><span class="bgs '+sclass(last.order.status)+'" style="font-size:.6rem">'+last.order.status+'</span> <span style="color:var(--gray)">'+fd(last.ts)+'</span></div>'
+        : '<span style="color:var(--gray-l);font-size:var(--fxs)">ຍັງບໍ່ເຄີຍຮັບ</span>';
+      return '<tr><td><b>'+(rd.name||'')+'</b></td><td>@'+(rd.username||'')+'</td><td>'+(rd.phone||'-')+'</td>'+
       '<td style="color:var(--gold-d);font-weight:700">'+fp(rd.commission_per_order||0)+'</td>'+
+      '<td>'+lastHtml+'</td>'+
       '<td>'+((rd.is_active===true||rd.is_active==='TRUE')?'<span class="bgs s-com">ເປີດໃຊ້ງານ</span>':'<span class="bgs s-can">ປິດໃຊ້ງານ</span>')+'</td>'+
-      '<td><div style="display:flex;gap:5px"><button class="abt be2" onclick="openRiderForm(\''+rd.id+'\')">✏️</button><button class="abt bd" onclick="delRider(\''+rd.id+'\')">🗑</button></div></td></tr>'
-    ).join('')+'</tbody></table></div>'+
+      '<td><div style="display:flex;gap:5px"><button class="abt be2" onclick="openRiderForm(\''+rd.id+'\')">✏️</button><button class="abt bd" onclick="delRider(\''+rd.id+'\')">🗑</button></div></td></tr>';
+    }).join('')+'</tbody></table></div>'+
     '<div class="tb"><div class="tb-t">💰 ສະຫຼຸບຄ່າຄອມມິດຊັ່ນ Rider</div><div style="display:flex;gap:8px;flex-wrap:wrap">'+dtfButtonHtml()+'<button class="abt bg2" onclick="exportRiderCommissionCSV()">📊 Export Excel</button></div></div>'+
     '<div class="fkpi-g" style="margin-bottom:var(--smd)">'+
     '<div class="fkpi nk"><div class="fkpi-l">💰 ຄ່າຄອມທັງໝົດ</div><div class="fkpi-v" style="color:var(--gold-d)">'+fp(totalComm)+'</div></div>'+
@@ -3136,6 +3148,7 @@ function _renderPrintInvoice(o) {
     tableInfo +
     '<div style="font-size:.78rem;margin-bottom:8px;line-height:1.6">👤 <b>' + o.customer_name + '</b> 📞 ' + o.customer_phone + (o.customer_address ? '<br>📍 ' + o.customer_address : '') + '</div>' +
     '<div style="font-size:.78rem;margin-bottom:8px">💳 ' + o.payment_method + ' | ສະຖານະ: <b style="color:#B8860B">' + o.status + '</b></div>' +
+    (o.rider_id ? '<div style="font-size:.78rem;margin-bottom:8px;background:#EAFAF1;border:1px solid #1A7A4A;border-radius:6px;padding:6px 10px">🏍️ ຈັດສົ່ງໂດຍ: <b style="color:#1A7A4A">' + (o.rider_name||'') + '</b></div>' : '') +
     '<table><thead><tr><th>ລາຍການ</th><th style="text-align:center">ຈຳ</th><th style="text-align:right">ລາຄາ</th><th style="text-align:right">ລວມ</th></tr></thead><tbody>' +
     rows + dr + dlr + tipR +
     '<tr style="background:#f5f0e0"><td colspan="3" style="font-weight:800">ລວມທັງໝົດ</td><td style="text-align:right;font-weight:800;color:#B8860B">' + fp(dispTot > 0 ? dispTot : dispSub) + '</td></tr></tbody></table>' +
@@ -3252,7 +3265,10 @@ async function rTables(){
     '<div class="dtw"><table class="dt"><thead><tr><th>Order</th><th>ໂຕະ</th><th>ລູກຄ້າ</th><th>ລາຄາ</th><th>ສະຖານະ</th><th>ການຊຳລະ</th><th>Slip</th><th>Actions</th></tr></thead><tbody>'+
     orders.filter(o=>!['completed','cancelled'].includes(o.status) && o.table_code).map(o=>
       '<tr>'+
-      '<td style="font-family:monospace">#'+(o.id||'').slice(0,7)+'</td>'+
+      '<td style="font-size:var(--fmd);font-family:monospace">#'+(o.id||'').slice(0,7)+
+        (o.rider_id ? '<br><span style="display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:2px 8px;border:1.5px solid var(--green);background:rgba(26,122,74,.08);border-radius:50px;font-size:.65rem;font-weight:700;color:var(--green)">🏍️ '+(o.rider_name||'')+'</span>'
+        : (o.status==='delivering' ? '<br><span style="display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:2px 8px;border:1.5px solid var(--orange);background:rgba(200,90,26,.08);border-radius:50px;font-size:.62rem;font-weight:700;color:var(--orange)">⚠️ ຍັງບໍ່ມີຄົນຂັບ</span>' : ''))+
+      '</td>'+
       '<td>'+(o.table_code?'<span style="background:rgba(200,90,26,.1);color:var(--orange);padding:2px 8px;border-radius:50px;font-weight:700">🪑 '+o.table_code+'</span>':'<span style="color:var(--gray)">Delivery</span>')+'</td>'+
       '<td><b>'+o.customer_name+'</b></td>'+
       '<td style="color:#b51100;font-weight:700">'+fp(o.total)+'</td>'+
@@ -3348,16 +3364,23 @@ async function rOrders(){
   const r=await api('getOrders',{}); if(!r||!r.success){showErr(r?r.error:'Error');return;}
   const os=r.data;
   os.forEach(o => { ORDER_CACHE[o.id] = { data: o, ts: Date.now() }; });
+  const ridersR = await api('getRiders',{});
+  const ridersList = (ridersR && ridersR.data) || [];
   document.getElementById('ac').innerHTML=
     '<div class="tb"><div class="tb-t">📋 Orders ('+os.length+')</div><div style="display:flex;gap:8px;flex-wrap:wrap">'+
     '<select class="fi" style="width:auto;font-size:var(--fxs)" onchange="filtOrds(this.value,\'status\')">'+
     '<option value="">ທັງໝົດ</option>'+['pending','confirmed','cooking','delivering','completed','cancelled'].map(s=>'<option value="'+s+'">'+s+'</option>').join('')+'</select>'+
     '<select class="fi" style="width:auto;font-size:var(--fxs)" onchange="filtOrds(this.value,\'table\')">'+
     '<option value="">ທຸກໂຕະ</option><option value="__delivery__">🚚 Delivery</option>'+A.tables.map(t=>'<option value="'+t.code+'">🪑 '+t.code+'</option>').join('')+'</select>'+
+    '<select class="fi" style="width:auto;font-size:var(--fxs)" onchange="filtOrds(this.value,\'rider\')">'+
+    '<option value="">🏍️ ທຸກຄົນຂັບ</option><option value="__none__">⚠️ ບໍ່ມີຄົນຂັບ</option>'+ridersList.map(rd=>'<option value="'+rd.id+'">🏍️ '+(rd.name||rd.username)+'</option>').join('')+'</select>'+
     '<div style="display:flex;align-items:center;gap:5px;font-size:var(--fxs);color:var(--green)"><span class="rt-dot"></span>Auto</div></div></div>'+
     '<div class="dtw"><table class="dt"><thead><tr><th>Order</th><th>ໂຕະ</th><th>ລູກຄ້າ</th><th>ລາຄາ</th><th>ສະຖານະ</th><th>ວັນທີ</th><th>ການຊຳລະ</th><th>Slip</th><th>Actions</th></tr></thead><tbody id="otb">'+
-    os.map(o=>'<tr data-status="'+o.status+'" data-table="'+(o.table_code||'')+'">'+
-      '<td style="font-size:var(--fmd);font-family:monospace">#'+(o.id||'').slice(0,7)+'</td>'+
+    os.map(o=>'<tr data-status="'+o.status+'" data-table="'+(o.table_code||'')+'" data-rider="'+(o.rider_id||'')+'">'+
+      '<td style="font-size:var(--fmd);font-family:monospace">#'+(o.id||'').slice(0,7)+
+        (o.rider_id ? '<br><span style="display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:2px 8px;border:1.5px solid var(--green);background:rgba(26,122,74,.08);border-radius:50px;font-size:.65rem;font-weight:700;color:var(--green)">🏍️ '+(o.rider_name||'')+'</span>'
+        : (o.status==='delivering' ? '<br><span style="display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:2px 8px;border:1.5px solid var(--orange);background:rgba(200,90,26,.08);border-radius:50px;font-size:.62rem;font-weight:700;color:var(--orange)">⚠️ ຍັງບໍ່ມີຄົນຂັບ</span>' : ''))+
+      '</td>'+
       '<td>'+(o.table_code?'<span style="background:rgba(200,90,26,.1);color:var(--orange);padding:5px 12px;border-radius:50px;font-weight:700;font-size:1rem">🪑 '+o.table_code+'</span>':'<span style="color:var(--gray-l);font-size:1.4rem">📦</span>')+'</td>'+
       '<td><b>'+o.customer_name+'</b><br><span style="font-size:var(--fxs);color:var(--gray)">'+o.customer_phone+'</span></td>'+
       '<td style="color:#b51100;font-weight:700">'+fp(o.total)+(parseFloat(o.tip)>0?'<br><span style="font-size:.65rem;color:var(--gold-d);font-weight:700">💰 +'+fp(o.tip)+'</span>':'')+'</td>'+
@@ -3400,6 +3423,7 @@ function filtOrds(v,by){
     let show=true;
     if(by==='status'&&v) show=tr.dataset.status===v;
     if(by==='table'){if(v==='__delivery__')show=!tr.dataset.table;else if(v)show=(tr.dataset.table||'').toUpperCase()===v.toUpperCase();}
+    if(by==='rider'){if(v==='__none__')show=!tr.dataset.rider;else if(v)show=tr.dataset.rider===v;}
     tr.style.display=show?'':'none';
   });
 }
@@ -3438,7 +3462,14 @@ function _renderOrderDetail(o) {
     '<div><label class="fl">ທີ່ຢູ່</label><div>' + (o.customer_address||'-') + '</div></div>' +
     '<div><label class="fl">ຊຳລະ</label><div>' + o.payment_method + '</div></div>' +
     '<div><label class="fl">ໝາຍເຫດ</label><div>' + (o.note||'-') + '</div></div>' +
-    '<div style="grid-column:1/-1"><label class="fl">ສະຖານະ</label><span class="bgs ' + sclass(o.status) + '">' + o.status + '</span></div></div>' +
+    '<div style="grid-column:1/-1"><label class="fl">ສະຖານະ</label><span class="bgs ' + sclass(o.status) + '">' + o.status + '</span></div>' +
+    (o.rider_id ?
+      '<div style="grid-column:1/-1;margin-top:8px"><label class="fl">🏍️ ຄົນຂັບທີ່ຈັດສົ່ງ</label>' +
+      '<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;background:rgba(26,122,74,.08);border:1.5px solid var(--green);border-radius:10px">' +
+      '<span style="font-weight:800;color:var(--green)">🏍️ ' + (o.rider_name||'') + '</span>' +
+      (o.delivered_at ? '<span style="font-size:var(--fxs);color:var(--gray)">✅ ສົ່ງແລ້ວ (' + fd(o.delivered_at) + ')</span>' : '<span style="font-size:var(--fxs);color:var(--orange)">🚚 ກຳລັງສົ່ງ...</span>') +
+      '</div></div>' : '') +
+    '</div>' +
     '<div class="dtw" style="margin-bottom:var(--smd)"><table class="dt"><thead><tr><th>ລາຍການ</th><th>ຈຳ</th><th>ລາຄາ</th><th>ລວມ</th><th>📝 ໝາຍເຫດ</th></tr></thead><tbody>' +
     (o.items||[]).map(i => '<tr><td>' + i.menu_name + 
        '</td><td>' + i.quantity + '</td><td>' + fp(i.unit_price) + '</td><td>' + fp(i.total_price) + '</td>' +
